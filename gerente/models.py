@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator
 from django.utils import timezone
-
+import string, random
 
 class Funcionario(models.Model):
     """
@@ -248,6 +248,35 @@ class Requisicao(models.Model):
             return True
         return False
 
+class Senha(models.Model):
+    """
+    Senhas geradas automaticamente para cada requisição
+    """
+    codigo = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name="Código da Senha"
+    )
+    requisicao = models.ForeignKey(
+        'Requisicao',
+        on_delete=models.CASCADE,
+        related_name='lista_senhas'
+    )
+    cliente = models.ForeignKey(
+        'Cliente',
+        on_delete=models.CASCADE,
+        related_name='senhas'
+    )
+    usada = models.BooleanField(default=False)
+    data_criacao = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.codigo} ({'Usada' if self.usada else 'Disponível'})"
+
+    @staticmethod
+    def gerar_codigo(tamanho=10):
+        chars = string.ascii_uppercase + string.digits
+        return ''.join(random.choices(chars, k=tamanho))
 
 class HistoricoSenha(models.Model):
     """
@@ -288,7 +317,6 @@ class HistoricoSenha(models.Model):
     def __str__(self):
         operacao = "Adicionou" if self.quantidade > 0 else "Usou"
         return f"{operacao} {abs(self.quantidade)} senha(s) - Req #{self.requisicao.id}"
-
 
 # Model adicional para configurações do sistema (opcional)
 class ConfiguracaoSistema(models.Model):

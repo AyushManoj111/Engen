@@ -7,8 +7,12 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 from django.utils import timezone
-from .models import Funcionario, Cliente, Requisicao, HistoricoSenha
+from django.db import transaction
+from .models import Funcionario, Cliente, Requisicao, HistoricoSenha, Senha
 import logging
+import csv
+from django.http import HttpResponse
+from openpyxl import Workbook
 
 # Configurar logging
 logger = logging.getLogger(__name__)
@@ -345,7 +349,6 @@ def adicionar_requisicao(request):
             quantidade_senhas = request.POST.get('quantidade_senhas')
             observacoes = request.POST.get('observacoes', '').strip()
             
-            # Validações básicas
             if not cliente_id or not valor or not quantidade_senhas:
                 messages.error(request, 'Cliente, valor e quantidade de senhas são obrigatórios.')
                 return render(request, 'requisicoes/adicionar_requisicao.html', {'clientes': clientes})
@@ -361,26 +364,38 @@ def adicionar_requisicao(request):
                 messages.error(request, 'Valor e quantidade devem ser maiores que zero.')
                 return render(request, 'requisicoes/adicionar_requisicao.html', {'clientes': clientes})
             
-            # Buscar cliente
             cliente = get_object_or_404(Cliente, id=cliente_id, ativo=True)
-            
-            # Criar requisição
-            requisicao = Requisicao.objects.create(
-                cliente=cliente,
-                valor=valor,
-                senhas=quantidade_senhas,
-                senhas_restantes=quantidade_senhas,
-                observacoes=observacoes if observacoes else None,
-                funcionario_responsavel=None  # Pode ser definido depois
-            )
-            
-            # Registrar no histórico
-            HistoricoSenha.objects.create(
-                requisicao=requisicao,
-                quantidade=quantidade_senhas,
-                motivo="Criação da requisição",
-                funcionario=None
-            )
+
+            # Usamos transaction.atomic para garantir consistência
+            with transaction.atomic():
+                requisicao = Requisicao.objects.create(
+                    cliente=cliente,
+                    valor=valor,
+                    senhas=quantidade_senhas,
+                    senhas_restantes=quantidade_senhas,
+                    observacoes=observacoes if observacoes else None,
+                    funcionario_responsavel=None
+                )
+
+                # Criar senhas random
+                for _ in range(quantidade_senhas):
+                    codigo = Senha.gerar_codigo()
+                    # Garantir que não repete
+                    while Senha.objects.filter(codigo=codigo).exists():
+                        codigo = Senha.gerar_codigo()
+                    Senha.objects.create(
+                        codigo=codigo,
+                        requisicao=requisicao,
+                        cliente=cliente
+                    )
+
+                # Registrar histórico
+                HistoricoSenha.objects.create(
+                    requisicao=requisicao,
+                    quantidade=quantidade_senhas,
+                    motivo="Criação da requisição",
+                    funcionario=None
+                )
             
             messages.success(request, f'Requisição #{requisicao.id} criada com sucesso para {cliente.nome}!')
             return redirect('requisicoes')
@@ -388,11 +403,7 @@ def adicionar_requisicao(request):
         except Exception as e:
             messages.error(request, f'Erro ao criar requisição: {str(e)}')
     
-    context = {
-        'clientes': clientes,
-    }
-    return render(request, 'gerente/adicionar_requisicao.html', context)
-
+    return render(request, 'gerente/adicionar_requisicao.html', {'clientes': clientes})
 
 @user_passes_test(is_superuser, login_url='/login/')
 def editar_requisicao(request, requisicao_id):
@@ -408,7 +419,6 @@ def editar_requisicao(request, requisicao_id):
             senhas_restantes = request.POST.get('senhas_restantes')
             observacoes = request.POST.get('observacoes', '').strip()
             
-            # Validações básicas
             if not cliente_id or not valor or not quantidade_senhas:
                 messages.error(request, 'Cliente, valor e quantidade de senhas são obrigatórios.')
                 return render(request, 'requisicoes/editar_requisicao.html', {
@@ -441,30 +451,47 @@ def editar_requisicao(request, requisicao_id):
                     'clientes': clientes
                 })
             
-            # Buscar cliente
             cliente = get_object_or_404(Cliente, id=cliente_id, ativo=True)
-            
-            # Verificar mudanças nas senhas restantes para histórico
-            senhas_restantes_anterior = requisicao.senhas_restantes
-            diferenca_senhas = senhas_restantes - senhas_restantes_anterior
-            
-            # Atualizar requisição
-            requisicao.cliente = cliente
-            requisicao.valor = valor
-            requisicao.senhas = quantidade_senhas
-            requisicao.senhas_restantes = senhas_restantes
-            requisicao.observacoes = observacoes if observacoes else None
-            requisicao.save()
-            
-            # Registrar mudança no histórico se houve alteração
-            if diferenca_senhas != 0:
-                motivo = f"Edição da requisição - Ajuste de senhas"
-                HistoricoSenha.objects.create(
-                    requisicao=requisicao,
-                    quantidade=diferenca_senhas,
-                    motivo=motivo,
-                    funcionario=None
-                )
+
+            with transaction.atomic():
+                # Verificar se aumentou o total de senhas
+                diferenca = quantidade_senhas - requisicao.senhas
+
+                requisicao.cliente = cliente
+                requisicao.valor = valor
+                requisicao.senhas = quantidade_senhas
+                requisicao.senhas_restantes = senhas_restantes
+                requisicao.observacoes = observacoes if observacoes else None
+                requisicao.save()
+
+                # Criar novas senhas se aumentou a quantidade
+                if diferenca > 0:
+                    for _ in range(diferenca):
+                        codigo = Senha.gerar_codigo()
+                        while Senha.objects.filter(codigo=codigo).exists():
+                            codigo = Senha.gerar_codigo()
+                        Senha.objects.create(
+                            codigo=codigo,
+                            requisicao=requisicao,
+                            cliente=cliente
+                        )
+
+                    HistoricoSenha.objects.create(
+                        requisicao=requisicao,
+                        quantidade=diferenca,
+                        motivo="Aumento do total de senhas na edição",
+                        funcionario=None
+                    )
+                
+                # Registrar ajuste manual nas senhas restantes (caso admin tenha alterado)
+                senhas_restantes_anterior = requisicao.senhas_restantes
+                if senhas_restantes != senhas_restantes_anterior and diferenca == 0:
+                    HistoricoSenha.objects.create(
+                        requisicao=requisicao,
+                        quantidade=senhas_restantes - senhas_restantes_anterior,
+                        motivo="Ajuste manual de senhas restantes na edição",
+                        funcionario=None
+                    )
             
             messages.success(request, f'Requisição #{requisicao.id} atualizada com sucesso!')
             return redirect('requisicoes')
@@ -477,7 +504,6 @@ def editar_requisicao(request, requisicao_id):
         'clientes': clientes,
     }
     return render(request, 'gerente/editar_requisicao.html', context)
-
 
 @user_passes_test(is_superuser, login_url='/login/')
 def deletar_requisicao(request, requisicao_id):
@@ -501,6 +527,15 @@ def deletar_requisicao(request, requisicao_id):
         messages.error(request, f'Erro ao remover requisição: {str(e)}')
     
     return redirect('requisicoes')
+
+@user_passes_test(is_superuser, login_url='/login/')
+def ver_senhas(request, requisicao_id):
+    requisicao = get_object_or_404(Requisicao, id=requisicao_id)
+    senhas = requisicao.lista_senhas.all().order_by('data_criacao')
+    return render(request, 'gerente/senhas.html', {
+        'requisicao': requisicao,
+        'senhas': senhas
+    })
 
 
 # ================================
@@ -568,6 +603,26 @@ def requisicoes_cliente(request, cliente_id):
     }
     return render(request, 'gerente/requisicoes_cliente.html', context)
 
+@user_passes_test(is_superuser, login_url='/login/')
+def exportar_senhas_csv(request, requisicao_id):
+    requisicao = get_object_or_404(Requisicao, id=requisicao_id)
+    senhas = requisicao.lista_senhas.all()
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="senhas_requisicao_{requisicao.id}.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Código', 'Cliente', 'Usada', 'Data Criação'])
+
+    for senha in senhas:
+        writer.writerow([
+            senha.codigo,
+            senha.cliente.nome,
+            'Sim' if senha.usada else 'Não',
+            senha.data_criacao.strftime("%d/%m/%Y %H:%M")
+        ])
+
+    return response
 
 # ================================
 # VIEWS AJAX (OPCIONAIS)

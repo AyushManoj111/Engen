@@ -23,6 +23,8 @@ urlpatterns = [
     path('requisicoes/adicionar/', views.adicionar_requisicao, name='adicionar_requisicao'),
     path('requisicoes/editar/<int:requisicao_id>/', views.editar_requisicao, name='editar_requisicao'),
     path('requisicoes/deletar/<int:requisicao_id>/', views.deletar_requisicao, name='deletar_requisicao'),
+    path('requisicoes/<int:requisicao_id>/senhas/', views.ver_senhas, name='ver_senhas'),
+    path('requisicoes/<int:requisicao_id>/exportar/csv/', views.exportar_senhas_csv, name='exportar_senhas_csv'),
     
     # AJAX
     path('ajax/cliente/<int:cliente_id>/', views.ajax_cliente_info, name='ajax_cliente_info'),

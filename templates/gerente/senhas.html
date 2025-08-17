@@ -1,0 +1,55 @@
+{% extends 'gerente/base.html' %}
+
+{% block title %}Senhas da Requisição #{{ requisicao.id }} - ENGEN{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h2>Senhas da Requisição #{{ requisicao.id }}</h2>
+    <div class="actions">
+        <a href="{% url 'exportar_senhas_csv' requisicao.id %}" class="btn-primary">📥 Exportar CSV</a>
+        <a href="{% url 'requisicoes' %}" class="btn-back">← Voltar</a>
+    </div>
+</div>
+
+<div class="table-container">
+    <div class="table-header">
+        <h3>Total de Senhas ({{ senhas.count }})</h3>
+    </div>
+    <div class="table-wrapper">
+        {% if senhas %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Cliente</th>
+                    <th>Requisição</th>
+                    <th>Usada</th>
+                    <th>Data Criação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for senha in senhas %}
+                <tr>
+                    <td><strong>{{ senha.codigo }}</strong></td>
+                    <td>{{ senha.cliente.nome }}</td>
+                    <td>#{{ senha.requisicao.id }}</td>
+                    <td>
+                        {% if senha.usada %}
+                            <span class="status usado">Sim</span>
+                        {% else %}
+                            <span class="status disponivel">Não</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ senha.data_criacao|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>Nenhuma senha gerada para esta requisição.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

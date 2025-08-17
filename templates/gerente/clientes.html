@@ -32,7 +32,9 @@
             <tbody>
                 {% for cliente in clientes %}
                 <tr>
-                    <td>{{ cliente.id }}</td>
+                    <td>
+                        <strong>#{{ cliente.id }}</strong>
+                    </td>
                     <td>{{ cliente.nome }}</td>
                     <td>{{ cliente.contacto|default:"N/A" }}</td>
                     <td>{{ cliente.endereco|default:"N/A" }}</td>

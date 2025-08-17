@@ -32,7 +32,9 @@
             <tbody>
                 {% for funcionario in funcionarios %}
                 <tr>
-                    <td>{{ funcionario.id }}</td>
+                    <td>
+                        <strong>#{{ funcionario.id }}</strong>
+                    </td>
                     <td>{{ funcionario.nome }}</td>
                     <td>{{ funcionario.email }}</td>
                     <td>{{ funcionario.contacto|default:"N/A" }}</td>

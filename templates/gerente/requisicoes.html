@@ -3,6 +3,66 @@
 {% block title %}Requisições - ENGEN{% endblock %}
 
 {% block content %}
+<style>
+    /* Estilos para Estatísticas */
+    .stats-container {
+        margin-top: 25px;
+    }
+
+    .stat-card {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 20px;
+    }
+
+    .stat-card h4 {
+        margin: 0 0 15px 0;
+        font-size: 1.1rem;
+        color: #495057;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+    }
+
+    .stat-item {
+        text-align: center;
+        background: white;
+        padding: 15px;
+        border-radius: 4px;
+        border: 1px solid #e9ecef;
+    }
+
+    .stat-number {
+        display: block;
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #007bff;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
 <div class="content-header">
     <h2>Requisições</h2>
     <a href="{% url 'adicionar_requisicao' %}" class="btn-primary">
@@ -40,7 +100,8 @@
             </thead>
             <tbody>
                 {% for requisicao in requisicoes %}
-                <tr data-status="{% if requisicao.senhas_restantes == 0 %}completo{% elif requisicao.senhas_restantes <= 5 %}baixo{% elif requisicao.senhas_restantes <= 15 %}medio{% else %}alto{% endif %}">
+                <tr
+                    data-status="{% if requisicao.senhas_restantes == 0 %}completo{% elif requisicao.senhas_restantes <= 5 %}baixo{% elif requisicao.senhas_restantes <= 15 %}medio{% else %}alto{% endif %}">
                     <td>
                         <strong>#{{ requisicao.id }}</strong>
                     </td>
@@ -50,15 +111,17 @@
                         <span class="senhas-badge">{{ requisicao.senhas }}</span>
                     </td>
                     <td>
-                        <span class="senhas-restante {% if requisicao.senhas_restantes == 0 %}completo{% elif requisicao.senhas_restantes <= 5 %}baixo{% elif requisicao.senhas_restantes <= 15 %}medio{% else %}alto{% endif %}">
+                        <span
+                            class="senhas-restante {% if requisicao.senhas_restantes == 0 %}completo{% elif requisicao.senhas_restantes <= 5 %}baixo{% elif requisicao.senhas_restantes <= 15 %}medio{% else %}alto{% endif %}">
                             {{ requisicao.senhas_restantes }}
                         </span>
                     </td>
                     <td>{{ requisicao.data_criacao|date:"d/m/Y" }}</td>
                     <td class="actions-cell">
                         <a href="{% url 'editar_requisicao' requisicao.id %}" class="btn-action btn-edit">Editar</a>
-                        <a href="{% url 'deletar_requisicao' requisicao.id %}" class="btn-action btn-delete" 
-                           onclick="return confirm('Tem certeza que deseja excluir esta requisição?')">Excluir</a>
+                        <a href="{% url 'deletar_requisicao' requisicao.id %}" class="btn-action btn-delete"
+                            onclick="return confirm('Tem certeza que deseja excluir esta requisição?')">Excluir</a>
+                        <a href="{% url 'ver_senhas' requisicao.id %}" class="btn-action btn-view">Ver Senhas</a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -103,17 +166,17 @@
 {% endif %}
 
 <script>
-function filterByStatus() {
-    const filter = document.getElementById('statusFilter').value;
-    const rows = document.querySelectorAll('tbody tr[data-status]');
-    
-    rows.forEach(row => {
-        if (filter === '' || row.getAttribute('data-status') === filter) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
-    });
-}
+    function filterByStatus() {
+        const filter = document.getElementById('statusFilter').value;
+        const rows = document.querySelectorAll('tbody tr[data-status]');
+
+        rows.forEach(row => {
+            if (filter === '' || row.getAttribute('data-status') === filter) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
 </script>
 {% endblock %}
