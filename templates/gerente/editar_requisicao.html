@@ -1,0 +1,132 @@
+{% extends 'gerente/base.html' %}
+
+{% block title %}Editar Requisição - ENGEN{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h2>Editar Requisição</h2>
+    <a href="{% url 'requisicoes' %}" class="btn-secondary">
+        ← Voltar
+    </a>
+</div>
+
+<div class="form-container">
+    <div class="form-card">
+        <div class="form-header">
+            <h3>Requisição #{{ requisicao.id }} - {{ requisicao.cliente.nome }}</h3>
+        </div>
+
+        <form method="post" action="{% url 'editar_requisicao' requisicao.id %}">
+            {% csrf_token %}
+
+            <div class="form-body">
+                <div class="form-group">
+                    <label for="cliente">Cliente <span class="required">*</span></label>
+                    <select class="form-control" id="cliente" name="cliente" required>
+                        <option value="">Selecione um cliente</option>
+                        {% for cliente in clientes %}
+                        <option value="{{ cliente.id }}" {% if cliente.id == requisicao.cliente.id %}selected{% endif %}>
+                            {{ cliente.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="valor">Valor (MT) <span class="required">*</span></label>
+                    <input type="number" class="form-control" id="valor" name="valor" step="0.01" min="0"
+                        value="{{ requisicao.valor }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="quantidade_senhas">Quantidade de Senhas <span class="required">*</span></label>
+                    <input type="number" class="form-control" id="quantidade_senhas" name="quantidade_senhas" min="1"
+                        value="{{ requisicao.senhas }}" required>
+                    <small class="form-text">Quantidade total de senhas para esta requisição</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="senhas_restantes">Senhas Restantes</label>
+                    <input type="number" class="form-control" id="senhas_restantes" name="senhas_restantes" min="0"
+                        value="{{ requisicao.senhas_restantes }}">
+                    <small class="form-text">Quantidade de senhas ainda disponíveis</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="observacoes">Observações</label>
+                    <textarea class="form-control" id="observacoes" name="observacoes" rows="3"
+                        placeholder="Observações sobre a requisição">{{ requisicao.observacoes|default:'' }}</textarea>
+                </div>
+            </div>
+
+            <div class="form-footer">
+                <a href="{% url 'requisicoes' %}" class="btn-secondary">Cancelar</a>
+                <button type="submit" class="btn-submit">Atualizar Requisição</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Informações da Requisição -->
+<div class="info-section">
+    <div class="info-card">
+        <h4>Detalhes da Requisição</h4>
+        <div class="info-grid">
+            <div class="info-item">
+                <strong>ID da Requisição:</strong>
+                <span>#{{ requisicao.id }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Cliente:</strong>
+                <span>{{ requisicao.cliente.nome }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Data de Criação:</strong>
+                <span>{{ requisicao.data_criacao|date:"d/m/Y H:i" }}</span>
+            </div>
+            {% if requisicao.data_atualizacao %}
+            <div class="info-item">
+                <strong>Última Atualização:</strong>
+                <span>{{ requisicao.data_atualizacao|date:"d/m/Y H:i" }}</span>
+            </div>
+            {% endif %}
+            <div class="info-item">
+                <strong>Valor Total:</strong>
+                <span class="valor-highlight">{{ requisicao.valor }} MT</span>
+            </div>
+            <div class="info-item">
+                <strong>Progress das Senhas:</strong>
+                <span>
+                    {{ requisicao.senhas_restantes }} / {{ requisicao.senhas }} restantes
+                    {% if requisicao.senhas > 0 %}
+                    ({{ percentual_utilizadas|floatformat:1 }}% utilizadas)
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status da Requisição -->
+<div class="info-section">
+    <div class="info-card">
+        <h4>Status da Requisição</h4>
+        <div class="status-info">
+            {% if requisicao.senhas_restantes == 0 %}
+            <div class="status-badge status-completed">✅ Requisição Concluída</div>
+            <p>Todas as senhas foram utilizadas.</p>
+            {% elif requisicao.senhas_restantes <= 5 %} <div class="status-badge status-warning">⚠️ Poucas Senhas
+                Restantes
+        </div>
+        <p>Considere recarregar ou criar uma nova requisição.</p>
+        {% elif requisicao.senhas_restantes <= 15 %} <div class="status-badge status-medium">🔶 Senhas em Uso
+    </div>
+    <p>Requisição em andamento normal.</p>
+    {% else %}
+    <div class="status-badge status-high">🟢 Muitas Senhas Disponíveis</div>
+    <p>Requisição recém-criada ou com muitas senhas restantes.</p>
+    {% endif %}
+</div>
+</div>
+</div>
+{% endblock %}

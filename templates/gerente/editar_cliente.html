@@ -1,0 +1,104 @@
+{% extends 'gerente/base.html' %}
+
+{% block title %}Editar Cliente - ENGEN{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h2>Editar Cliente</h2>
+    <a href="{% url 'clientes' %}" class="btn-secondary">
+        ← Voltar
+    </a>
+</div>
+
+<div class="form-container">
+    <div class="form-card">
+        <div class="form-header">
+            <h3>Editar: {{ cliente.nome }}</h3>
+        </div>
+        
+        <form method="post" action="{% url 'editar_cliente' cliente.id %}">
+            {% csrf_token %}
+            
+            <div class="form-body">
+                <div class="form-group">
+                    <label for="nome">Nome <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="nome" name="nome" 
+                           value="{{ cliente.nome }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="contacto">Contacto</label>
+                    <input type="tel" class="form-control" id="contacto" name="contacto"
+                           value="{{ cliente.contacto|default:'' }}"
+                           placeholder="+258 XX XXX XXXX">
+                </div>
+
+                <div class="form-group">
+                    <label for="endereco">Endereço</label>
+                    <textarea class="form-control" id="endereco" name="endereco" rows="3"
+                              placeholder="Digite o endereço completo">{{ cliente.endereco|default:'' }}</textarea>
+                </div>
+            </div>
+
+            <div class="form-footer">
+                <a href="{% url 'clientes' %}" class="btn-secondary">Cancelar</a>
+                <button type="submit" class="btn-submit">Atualizar Cliente</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Informações Adicionais -->
+<div class="info-section">
+    <div class="info-card">
+        <h4>Informações do Cliente</h4>
+        <div class="info-grid">
+            <div class="info-item">
+                <strong>ID:</strong>
+                <span>{{ cliente.id }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Data de Criação:</strong>
+                <span>{{ cliente.data_criacao|date:"d/m/Y H:i" }}</span>
+            </div>
+            {% if cliente.data_atualizacao %}
+            <div class="info-item">
+                <strong>Última Atualização:</strong>
+                <span>{{ cliente.data_atualizacao|date:"d/m/Y H:i" }}</span>
+            </div>
+            {% endif %}
+            <div class="info-item">
+                <strong>Total de Requisições:</strong>
+                <span class="requisicoes-badge">{{ cliente.requisicoes.count }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Requisições do Cliente -->
+{% if cliente.requisicoes.exists %}
+<div class="info-section">
+    <div class="info-card">
+        <h4>Requisições do Cliente</h4>
+        <div class="requisicoes-list">
+            {% for requisicao in cliente.requisicoes.all|slice:":5" %}
+            <div class="requisicao-item">
+                <div class="requisicao-info">
+                    <strong>Requisição #{{ requisicao.id }}</strong>
+                    <span class="requisicao-date">{{ requisicao.data_criacao|date:"d/m/Y" }}</span>
+                </div>
+                <a href="{% url 'detalhes_requisicao' requisicao.id %}" class="btn-link">Ver Detalhes</a>
+            </div>
+            {% endfor %}
+            {% if cliente.requisicoes.count > 5 %}
+            <div class="show-more">
+                <a href="{% url 'requisicoes_cliente' cliente.id %}" class="btn-link">
+                    Ver todas as {{ cliente.requisicoes.count }} requisições
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

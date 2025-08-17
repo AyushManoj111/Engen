@@ -1,0 +1,81 @@
+{% extends 'gerente/base.html' %}
+
+{% block title %}Nova Requisição - ENGEN{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h2>Nova Requisição</h2>
+    <a href="{% url 'requisicoes' %}" class="btn-secondary">
+        ← Voltar
+    </a>
+</div>
+
+<div class="form-container">
+    <div class="form-card">
+        <div class="form-header">
+            <h3>Dados da Requisição</h3>
+        </div>
+        
+        <form method="post" action="{% url 'adicionar_requisicao' %}">
+            {% csrf_token %}
+            
+            <div class="form-body">
+                <div class="form-group">
+                    <label for="cliente">Cliente <span class="required">*</span></label>
+                    <select class="form-control" id="cliente" name="cliente" required>
+                        <option value="">Selecione um cliente</option>
+                        {% for cliente in clientes %}
+                            <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text">
+                        <a href="{% url 'adicionar_cliente' %}" class="btn-link">+ Adicionar novo cliente</a>
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label for="valor">Valor (MT) <span class="required">*</span></label>
+                    <input type="number" class="form-control" id="valor" name="valor" 
+                           step="0.01" min="0" placeholder="0.00" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="quantidade_senhas">Quantidade de Senhas <span class="required">*</span></label>
+                    <input type="number" class="form-control" id="quantidade_senhas" name="quantidade_senhas" 
+                           min="1" placeholder="Ex: 50" required>
+                    <small class="form-text">Digite a quantidade inicial de senhas para esta requisição</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="observacoes">Observações</label>
+                    <textarea class="form-control" id="observacoes" name="observacoes" rows="3"
+                              placeholder="Observações adicionais sobre a requisição (opcional)"></textarea>
+                </div>
+            </div>
+
+            <div class="form-footer">
+                <a href="{% url 'requisicoes' %}" class="btn-secondary">Cancelar</a>
+                <button type="submit" class="btn-submit">Criar Requisição</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Informações sobre Requisições -->
+<div class="info-section">
+    <div class="info-card">
+        <h4>💡 Informações Importantes</h4>
+        <div class="info-list">
+            <div class="info-item">
+                <strong>Valor:</strong> Será usado para calcular o custo total da requisição
+            </div>
+            <div class="info-item">
+                <strong>Senhas:</strong> Quantidade inicial que será disponibilizada para o cliente
+            </div>
+            <div class="info-item">
+                <strong>Senhas Restantes:</strong> Serão inicialmente iguais à quantidade de senhas
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends 'gerente/base.html' %}
+
+{% block title %}Funcionários - ENGEN{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h2>Funcionários</h2>
+    <a href="{% url 'adicionar_funcionario' %}" class="btn-primary">
+        + Adicionar Funcionário
+    </a>
+</div>
+
+<!-- Funcionários Table -->
+<div class="table-container">
+    <div class="table-header">
+        <h3>Lista de Funcionários ({{ funcionarios.count }} total)</h3>
+    </div>
+    <div class="table-wrapper">
+        {% if funcionarios %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Contacto</th>
+                    <th>Morada</th>
+                    <th>Data Criação</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for funcionario in funcionarios %}
+                <tr>
+                    <td>{{ funcionario.id }}</td>
+                    <td>{{ funcionario.nome }}</td>
+                    <td>{{ funcionario.email }}</td>
+                    <td>{{ funcionario.contacto|default:"N/A" }}</td>
+                    <td>{{ funcionario.morada|default:"N/A" }}</td>
+                    <td>{{ funcionario.data_criacao|date:"d/m/Y" }}</td>
+                    <td class="actions-cell">
+                        <a href="{% url 'editar_funcionario' funcionario.id %}"
+                            class="btn-action btn-edit">Editar</a>
+                        <a href="{% url 'deletar_funcionario' funcionario.id %}"
+                            class="btn-action btn-delete"
+                            onclick="return confirm('Tem certeza que deseja excluir {{ funcionario.nome }}?')">Excluir</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>Nenhum funcionário cadastrado.</p>
+            <a href="{% url 'adicionar_funcionario' %}" class="btn-primary">
+                Adicionar Primeiro Funcionário
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

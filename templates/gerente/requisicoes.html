@@ -1,0 +1,119 @@
+{% extends 'gerente/base.html' %}
+
+{% block title %}Requisições - ENGEN{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h2>Requisições</h2>
+    <a href="{% url 'adicionar_requisicao' %}" class="btn-primary">
+        + Nova Requisição
+    </a>
+</div>
+
+<!-- Requisições Table -->
+<div class="table-container">
+    <div class="table-header">
+        <h3>Lista de Requisições ({{ requisicoes.count }} total)</h3>
+        <div class="table-filters">
+            <select class="filter-select" id="statusFilter" onchange="filterByStatus()">
+                <option value="">Todos os Status</option>
+                <option value="completo">Concluídas</option>
+                <option value="baixo">Poucas Senhas</option>
+                <option value="medio">Em Andamento</option>
+                <option value="alto">Recentes</option>
+            </select>
+        </div>
+    </div>
+    <div class="table-wrapper">
+        {% if requisicoes %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Cliente</th>
+                    <th>Valor</th>
+                    <th>Senhas</th>
+                    <th>Senhas Restantes</th>
+                    <th>Data Criação</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for requisicao in requisicoes %}
+                <tr data-status="{% if requisicao.senhas_restantes == 0 %}completo{% elif requisicao.senhas_restantes <= 5 %}baixo{% elif requisicao.senhas_restantes <= 15 %}medio{% else %}alto{% endif %}">
+                    <td>
+                        <strong>#{{ requisicao.id }}</strong>
+                    </td>
+                    <td>{{ requisicao.cliente.nome }}</td>
+                    <td class="valor-cell">{{ requisicao.valor }} MT</td>
+                    <td>
+                        <span class="senhas-badge">{{ requisicao.senhas }}</span>
+                    </td>
+                    <td>
+                        <span class="senhas-restante {% if requisicao.senhas_restantes == 0 %}completo{% elif requisicao.senhas_restantes <= 5 %}baixo{% elif requisicao.senhas_restantes <= 15 %}medio{% else %}alto{% endif %}">
+                            {{ requisicao.senhas_restantes }}
+                        </span>
+                    </td>
+                    <td>{{ requisicao.data_criacao|date:"d/m/Y" }}</td>
+                    <td class="actions-cell">
+                        <a href="{% url 'editar_requisicao' requisicao.id %}" class="btn-action btn-edit">Editar</a>
+                        <a href="{% url 'deletar_requisicao' requisicao.id %}" class="btn-action btn-delete" 
+                           onclick="return confirm('Tem certeza que deseja excluir esta requisição?')">Excluir</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>Nenhuma requisição cadastrada.</p>
+            <a href="{% url 'adicionar_requisicao' %}" class="btn-primary">
+                Criar Primeira Requisição
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Estatísticas Rápidas -->
+{% if requisicoes %}
+<div class="stats-container">
+    <div class="stat-card">
+        <h4>Estatísticas</h4>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-number">{{ requisicoes.count }}</span>
+                <span class="stat-label">Total de Requisições</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ total_valor|default:0 }} MT</span>
+                <span class="stat-label">Valor Total</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ total_senhas|default:0 }}</span>
+                <span class="stat-label">Total de Senhas</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ senhas_restantes_total|default:0 }}</span>
+                <span class="stat-label">Senhas Restantes</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function filterByStatus() {
+    const filter = document.getElementById('statusFilter').value;
+    const rows = document.querySelectorAll('tbody tr[data-status]');
+    
+    rows.forEach(row => {
+        if (filter === '' || row.getAttribute('data-status') === filter) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}
