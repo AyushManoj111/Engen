@@ -8,7 +8,7 @@ from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.db import transaction
-from .models import Funcionario, Cliente, Requisicao, HistoricoSenha, Senha
+from .models import Funcionario, Cliente, Requisicao, Senha
 import logging
 import csv
 from django.http import HttpResponse
@@ -21,60 +21,49 @@ def is_superuser(user):
    """Verifica se o usuário é superuser"""
    return user.is_superuser
 
-def is_funcionario(user):
-   """Verifica se o usuário é funcionário"""
-   return user.groups.filter(name='Funcionarios').exists()
+def login_admin_view(request):
+    """View para login de administradores (superusuário)"""
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
 
-def login_view(request):
-   """View para página de login - para superusuários e funcionários"""
-   if request.method == 'POST':
-       username = request.POST.get('username')
-       password = request.POST.get('password')
-       
-       # Autentica o usuário
-       user = authenticate(request, username=username, password=password)
-       
-       if user is not None:
-           # Verifica se o usuário é superusuário ou funcionário
-           if user.is_superuser:
-               login(request, user)
-               return redirect('dashboard')
-           elif user.groups.filter(name='Funcionarios').exists():
-               login(request, user)
-               return redirect('funcionario_dashboard')
-           else:
-               messages.error(request, 'Acesso negado. Apenas administradores e funcionários podem acessar o sistema.')
-       else:
-           messages.error(request, 'Username ou senha incorretos')
-   
-   return render(request, 'gerente/login.html')
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None and user.is_superuser:
+            login(request, user)
+            return redirect('dashboard')
+        else:
+            messages.error(request, 'Apenas administradores podem acessar este login.')
+    
+    return render(request, 'gerente/login.html')
 
 @user_passes_test(is_superuser, login_url='/login/')
 def dashboard_view(request):
-   total_funcionarios = Funcionario.objects.count()
-   total_clientes = Cliente.objects.count()
-   total_requisicoes = Requisicao.objects.count()
-   requisicoes_pendentes = Requisicao.objects.filter(senhas_restantes__gt=0).count()
+    total_funcionarios = Funcionario.objects.count()
+    total_clientes = Cliente.objects.count()
+    total_requisicoes = Requisicao.objects.count()
 
-   context = {
-       'total_funcionarios': total_funcionarios,
-       'total_clientes': total_clientes,
-       'total_requisicoes': total_requisicoes,
-       'requisicoes_pendentes': requisicoes_pendentes,
-   }
-   return render(request, 'gerente/dashboard.html', context)
+    requisicoes = Requisicao.objects.prefetch_related('lista_senhas')
+    requisicoes_pendentes = sum(1 for r in requisicoes if r.senhas_restantes > 0)
 
-@user_passes_test(is_funcionario, login_url='/login/')
-def funcionario_dashboard_view(request):
-   # Dashboard específico para funcionários
-   
-   return render(request, 'gerente/dashboard_funcionario.html')
+    context = {
+        'total_funcionarios': total_funcionarios,
+        'total_clientes': total_clientes,
+        'total_requisicoes': total_requisicoes,
+        'requisicoes_pendentes': requisicoes_pendentes,
+    }
+    return render(request, 'gerente/dashboard.html', context)
+
 
 def logout_view(request):
    """View para logout"""
    logout(request)
    messages.success(request, 'Você foi desconectado com sucesso')
-   return redirect('login')
+   return redirect('')
+
+def home_view(request):
+   return render(request, 'gerente/home.html')
+
 
 # ================================
 # VIEWS DE FUNCIONÁRIOS
@@ -83,14 +72,15 @@ def logout_view(request):
 @user_passes_test(is_superuser, login_url='/login/')
 def funcionarios(request):
     """Lista todos os funcionários"""
-    funcionarios = Funcionario.objects.filter(ativo=True).order_by('-data_criacao')
+    funcionarios = Funcionario.objects.filter(activo=True).order_by('-data_criacao')
     
     # Filtros opcionais
     search = request.GET.get('search', '')
     if search:
         funcionarios = funcionarios.filter(
             Q(nome__icontains=search) | 
-            Q(email__icontains=search)
+            Q(email__icontains=search) |
+            Q(contacto__icontains=search)
         )
     
     context = {
@@ -107,14 +97,13 @@ def adicionar_funcionario(request):
         try:
             nome = request.POST.get('nome', '').strip()
             email = request.POST.get('email', '').strip().lower()
-            password = request.POST.get('password', '').strip()
             contacto = request.POST.get('contacto', '').strip()
             morada = request.POST.get('morada', '').strip()
             
             # Validações básicas
-            if not nome or not email or not password:
-                messages.error(request, 'Nome, email e password são obrigatórios.')
-                return render(request, 'funcionarios/adicionar_funcionario.html')
+            if not nome or not email:
+                messages.error(request, 'Nome e email são obrigatórios.')
+                return render(request, 'gerente/adicionar_funcionario.html')
             
             # Verificar se email já existe
             if Funcionario.objects.filter(email=email).exists():
@@ -125,7 +114,6 @@ def adicionar_funcionario(request):
             funcionario = Funcionario.objects.create(
                 nome=nome,
                 email=email,
-                password=password,  # Em produção, usar hash
                 contacto=contacto if contacto else None,
                 morada=morada if morada else None,
             )
@@ -142,31 +130,28 @@ def adicionar_funcionario(request):
 @user_passes_test(is_superuser, login_url='/login/')
 def editar_funcionario(request, funcionario_id):
     """Editar funcionário existente"""
-    funcionario = get_object_or_404(Funcionario, id=funcionario_id, ativo=True)
+    funcionario = get_object_or_404(Funcionario, id=funcionario_id, activo=True)
     
     if request.method == 'POST':
         try:
             nome = request.POST.get('nome', '').strip()
             email = request.POST.get('email', '').strip().lower()
-            password = request.POST.get('password', '').strip()
             contacto = request.POST.get('contacto', '').strip()
             morada = request.POST.get('morada', '').strip()
             
             # Validações básicas
             if not nome or not email:
                 messages.error(request, 'Nome e email são obrigatórios.')
-                return render(request, 'funcionarios/editar_funcionario.html', {'funcionario': funcionario})
+                return render(request, 'gerente/editar_funcionario.html', {'funcionario': funcionario})
             
             # Verificar se email já existe (exceto o atual)
             if Funcionario.objects.filter(email=email).exclude(id=funcionario.id).exists():
                 messages.error(request, 'Já existe outro funcionário com este email.')
-                return render(request, 'funcionarios/editar_funcionario.html', {'funcionario': funcionario})
+                return render(request, 'gerente/editar_funcionario.html', {'funcionario': funcionario})
             
             # Atualizar funcionário
             funcionario.nome = nome
             funcionario.email = email
-            if password:  # Só atualiza se nova senha foi fornecida
-                funcionario.password = password
             funcionario.contacto = contacto if contacto else None
             funcionario.morada = morada if morada else None
             funcionario.save()
@@ -183,10 +168,10 @@ def editar_funcionario(request, funcionario_id):
 @user_passes_test(is_superuser, login_url='/login/')
 def deletar_funcionario(request, funcionario_id):
     """Deletar funcionário (soft delete)"""
-    funcionario = get_object_or_404(Funcionario, id=funcionario_id, ativo=True)
+    funcionario = get_object_or_404(Funcionario, id=funcionario_id, activo=True)
     
     try:
-        funcionario.ativo = False
+        funcionario.activo = False
         funcionario.save()
         messages.success(request, f'Funcionário "{funcionario.nome}" removido com sucesso!')
     except Exception as e:
@@ -202,13 +187,14 @@ def deletar_funcionario(request, funcionario_id):
 @user_passes_test(is_superuser, login_url='/login/')
 def clientes(request):
     """Lista todos os clientes"""
-    clientes = Cliente.objects.filter(ativo=True).prefetch_related('requisicoes').order_by('-data_criacao')
+    clientes = Cliente.objects.prefetch_related('requisicoes').order_by('-data_criacao')
     
     # Filtros opcionais
     search = request.GET.get('search', '')
     if search:
         clientes = clientes.filter(
             Q(nome__icontains=search) | 
+            Q(email__icontains=search) |
             Q(contacto__icontains=search) |
             Q(endereco__icontains=search)
         )
@@ -226,17 +212,19 @@ def adicionar_cliente(request):
     if request.method == 'POST':
         try:
             nome = request.POST.get('nome', '').strip()
+            email = request.POST.get('email', '').strip()
             contacto = request.POST.get('contacto', '').strip()
             endereco = request.POST.get('endereco', '').strip()
             
             # Validações básicas
             if not nome:
                 messages.error(request, 'Nome é obrigatório.')
-                return render(request, 'clientes/adicionar_cliente.html')
+                return render(request, 'gerente/adicionar_cliente.html')
             
             # Criar cliente
             cliente = Cliente.objects.create(
                 nome=nome,
+                email=email if email else None,
                 contacto=contacto if contacto else None,
                 endereco=endereco if endereco else None,
             )
@@ -253,21 +241,23 @@ def adicionar_cliente(request):
 @user_passes_test(is_superuser, login_url='/login/')
 def editar_cliente(request, cliente_id):
     """Editar cliente existente"""
-    cliente = get_object_or_404(Cliente, id=cliente_id, ativo=True)
+    cliente = get_object_or_404(Cliente, id=cliente_id)
     
     if request.method == 'POST':
         try:
             nome = request.POST.get('nome', '').strip()
+            email = request.POST.get('email', '').strip()
             contacto = request.POST.get('contacto', '').strip()
             endereco = request.POST.get('endereco', '').strip()
             
             # Validações básicas
             if not nome:
                 messages.error(request, 'Nome é obrigatório.')
-                return render(request, 'clientes/editar_cliente.html', {'cliente': cliente})
+                return render(request, 'gerente/editar_cliente.html', {'cliente': cliente})
             
             # Atualizar cliente
             cliente.nome = nome
+            cliente.email = email if email else None
             cliente.contacto = contacto if contacto else None
             cliente.endereco = endereco if endereco else None
             cliente.save()
@@ -283,8 +273,8 @@ def editar_cliente(request, cliente_id):
 
 @user_passes_test(is_superuser, login_url='/login/')
 def deletar_cliente(request, cliente_id):
-    """Deletar cliente (soft delete)"""
-    cliente = get_object_or_404(Cliente, id=cliente_id, ativo=True)
+    """Deletar cliente"""
+    cliente = get_object_or_404(Cliente, id=cliente_id)
     
     try:
         # Verificar se cliente tem requisições ativas
@@ -293,8 +283,7 @@ def deletar_cliente(request, cliente_id):
             messages.warning(request, f'Cliente "{cliente.nome}" possui {requisicoes_ativas} requisição(ões) ativa(s). Remova-as primeiro.')
             return redirect('clientes')
         
-        cliente.ativo = False
-        cliente.save()
+        cliente.delete()
         messages.success(request, f'Cliente "{cliente.nome}" removido com sucesso!')
     except Exception as e:
         messages.error(request, f'Erro ao remover cliente: {str(e)}')
@@ -309,42 +298,46 @@ def deletar_cliente(request, cliente_id):
 @user_passes_test(is_superuser, login_url='/login/')
 def requisicoes(request):
     """Lista todas as requisições"""
-    requisicoes = Requisicao.objects.filter(ativa=True).select_related('cliente').order_by('-data_criacao')
-    
+    requisicoes = (
+        Requisicao.objects.filter(ativa=True)
+        .select_related('cliente')
+        .prefetch_related('lista_senhas')  # otimiza cálculo de senhas usadas/restantes
+        .order_by('-data_criacao')
+    )
+
     # Filtros opcionais
     status_filter = request.GET.get('status', '')
     search = request.GET.get('search', '')
-    
+
     if search:
         requisicoes = requisicoes.filter(
             Q(cliente__nome__icontains=search) |
             Q(id__icontains=search)
         )
-    
+
+    # Filtragem por status (feito em Python, já que senhas_restantes é @property)
     if status_filter:
         if status_filter == 'completo':
-            requisicoes = requisicoes.filter(senhas_restantes=0)
+            requisicoes = [r for r in requisicoes if r.senhas_restantes == 0]
         elif status_filter == 'baixo':
-            requisicoes = requisicoes.filter(senhas_restantes__gt=0, senhas_restantes__lte=5)
+            requisicoes = [r for r in requisicoes if 0 < r.senhas_restantes <= 5]
         elif status_filter == 'medio':
-            requisicoes = requisicoes.filter(senhas_restantes__gt=5, senhas_restantes__lte=15)
+            requisicoes = [r for r in requisicoes if 5 < r.senhas_restantes <= 15]
         elif status_filter == 'alto':
-            requisicoes = requisicoes.filter(senhas_restantes__gt=15)
-    
+            requisicoes = [r for r in requisicoes if r.senhas_restantes > 15]
+
     # Estatísticas
-    stats = requisicoes.aggregate(
-        total_valor=Sum('valor'),
-        total_senhas=Sum('senhas'),
-        senhas_restantes_total=Sum('senhas_restantes')
-    )
-    
+    total_valor = sum(r.valor for r in requisicoes)
+    total_senhas = sum(r.senhas for r in requisicoes)
+    senhas_restantes_total = sum(r.senhas_restantes for r in requisicoes)
+
     context = {
         'requisicoes': requisicoes,
         'search': search,
         'status_filter': status_filter,
-        'total_valor': stats['total_valor'] or 0,
-        'total_senhas': stats['total_senhas'] or 0,
-        'senhas_restantes_total': stats['senhas_restantes_total'] or 0,
+        'total_valor': total_valor,
+        'total_senhas': total_senhas,
+        'senhas_restantes_total': senhas_restantes_total,
     }
     return render(request, 'gerente/requisicoes.html', context)
 
@@ -352,31 +345,30 @@ def requisicoes(request):
 @user_passes_test(is_superuser, login_url='/login/')
 def adicionar_requisicao(request):
     """Adicionar nova requisição"""
-    clientes = Cliente.objects.filter(ativo=True).order_by('nome')
+    clientes = Cliente.objects.order_by('nome')
     
     if request.method == 'POST':
         try:
             cliente_id = request.POST.get('cliente')
             valor = request.POST.get('valor')
             quantidade_senhas = request.POST.get('quantidade_senhas')
-            observacoes = request.POST.get('observacoes', '').strip()
             
             if not cliente_id or not valor or not quantidade_senhas:
                 messages.error(request, 'Cliente, valor e quantidade de senhas são obrigatórios.')
-                return render(request, 'requisicoes/adicionar_requisicao.html', {'clientes': clientes})
+                return render(request, 'gerente/adicionar_requisicao.html', {'clientes': clientes})
             
             try:
                 valor = float(valor)
                 quantidade_senhas = int(quantidade_senhas)
             except ValueError:
                 messages.error(request, 'Valor e quantidade devem ser números válidos.')
-                return render(request, 'requisicoes/adicionar_requisicao.html', {'clientes': clientes})
+                return render(request, 'gerente/adicionar_requisicao.html', {'clientes': clientes})
             
             if valor <= 0 or quantidade_senhas <= 0:
                 messages.error(request, 'Valor e quantidade devem ser maiores que zero.')
-                return render(request, 'requisicoes/adicionar_requisicao.html', {'clientes': clientes})
+                return render(request, 'gerente/adicionar_requisicao.html', {'clientes': clientes})
             
-            cliente = get_object_or_404(Cliente, id=cliente_id, ativo=True)
+            cliente = get_object_or_404(Cliente, id=cliente_id)
 
             # Usamos transaction.atomic para garantir consistência
             with transaction.atomic():
@@ -385,7 +377,6 @@ def adicionar_requisicao(request):
                     valor=valor,
                     senhas=quantidade_senhas,
                     senhas_restantes=quantidade_senhas,
-                    observacoes=observacoes if observacoes else None,
                     funcionario_responsavel=None
                 )
 
@@ -400,14 +391,6 @@ def adicionar_requisicao(request):
                         requisicao=requisicao,
                         cliente=cliente
                     )
-
-                # Registrar histórico
-                HistoricoSenha.objects.create(
-                    requisicao=requisicao,
-                    quantidade=quantidade_senhas,
-                    motivo="Criação da requisição",
-                    funcionario=None
-                )
             
             messages.success(request, f'Requisição #{requisicao.id} criada com sucesso para {cliente.nome}!')
             return redirect('requisicoes')
@@ -421,7 +404,7 @@ def adicionar_requisicao(request):
 def editar_requisicao(request, requisicao_id):
     """Editar requisição existente"""
     requisicao = get_object_or_404(Requisicao, id=requisicao_id, ativa=True)
-    clientes = Cliente.objects.filter(ativo=True).order_by('nome')
+    clientes = Cliente.objects.order_by('nome')
     
     if request.method == 'POST':
         try:
@@ -429,11 +412,10 @@ def editar_requisicao(request, requisicao_id):
             valor = request.POST.get('valor')
             quantidade_senhas = request.POST.get('quantidade_senhas')
             senhas_restantes = request.POST.get('senhas_restantes')
-            observacoes = request.POST.get('observacoes', '').strip()
             
             if not cliente_id or not valor or not quantidade_senhas:
                 messages.error(request, 'Cliente, valor e quantidade de senhas são obrigatórios.')
-                return render(request, 'requisicoes/editar_requisicao.html', {
+                return render(request, 'gerente/editar_requisicao.html', {
                     'requisicao': requisicao,
                     'clientes': clientes
                 })
@@ -444,26 +426,26 @@ def editar_requisicao(request, requisicao_id):
                 senhas_restantes = int(senhas_restantes) if senhas_restantes else 0
             except ValueError:
                 messages.error(request, 'Valores devem ser números válidos.')
-                return render(request, 'requisicoes/editar_requisicao.html', {
+                return render(request, 'gerente/editar_requisicao.html', {
                     'requisicao': requisicao,
                     'clientes': clientes
                 })
             
             if valor <= 0 or quantidade_senhas <= 0:
                 messages.error(request, 'Valor e quantidade devem ser maiores que zero.')
-                return render(request, 'requisicoes/editar_requisicao.html', {
+                return render(request, 'gerente/editar_requisicao.html', {
                     'requisicao': requisicao,
                     'clientes': clientes
                 })
             
             if senhas_restantes > quantidade_senhas:
                 messages.error(request, 'Senhas restantes não podem ser maiores que o total.')
-                return render(request, 'requisicoes/editar_requisicao.html', {
+                return render(request, 'gerente/editar_requisicao.html', {
                     'requisicao': requisicao,
                     'clientes': clientes
                 })
             
-            cliente = get_object_or_404(Cliente, id=cliente_id, ativo=True)
+            cliente = get_object_or_404(Cliente, id=cliente_id)
 
             with transaction.atomic():
                 # Verificar se aumentou o total de senhas
@@ -473,7 +455,6 @@ def editar_requisicao(request, requisicao_id):
                 requisicao.valor = valor
                 requisicao.senhas = quantidade_senhas
                 requisicao.senhas_restantes = senhas_restantes
-                requisicao.observacoes = observacoes if observacoes else None
                 requisicao.save()
 
                 # Criar novas senhas se aumentou a quantidade
@@ -487,23 +468,6 @@ def editar_requisicao(request, requisicao_id):
                             requisicao=requisicao,
                             cliente=cliente
                         )
-
-                    HistoricoSenha.objects.create(
-                        requisicao=requisicao,
-                        quantidade=diferenca,
-                        motivo="Aumento do total de senhas na edição",
-                        funcionario=None
-                    )
-                
-                # Registrar ajuste manual nas senhas restantes (caso admin tenha alterado)
-                senhas_restantes_anterior = requisicao.senhas_restantes
-                if senhas_restantes != senhas_restantes_anterior and diferenca == 0:
-                    HistoricoSenha.objects.create(
-                        requisicao=requisicao,
-                        quantidade=senhas_restantes - senhas_restantes_anterior,
-                        motivo="Ajuste manual de senhas restantes na edição",
-                        funcionario=None
-                    )
             
             messages.success(request, f'Requisição #{requisicao.id} atualizada com sucesso!')
             return redirect('requisicoes')
@@ -525,15 +489,6 @@ def deletar_requisicao(request, requisicao_id):
     try:
         requisicao.ativa = False
         requisicao.save()
-        
-        # Registrar no histórico
-        HistoricoSenha.objects.create(
-            requisicao=requisicao,
-            quantidade=0,
-            motivo="Requisição removida do sistema",
-            funcionario=None
-        )
-        
         messages.success(request, f'Requisição #{requisicao.id} removida com sucesso!')
     except Exception as e:
         messages.error(request, f'Erro ao remover requisição: {str(e)}')
@@ -559,8 +514,8 @@ def dashboard(request):
     """Dashboard principal com estatísticas"""
     # Estatísticas gerais
     stats = {
-        'total_funcionarios': Funcionario.objects.filter(ativo=True).count(),
-        'total_clientes': Cliente.objects.filter(ativo=True).count(),
+        'total_funcionarios': Funcionario.objects.filter(activo=True).count(),
+        'total_clientes': Cliente.objects.count(),
         'total_requisicoes': Requisicao.objects.filter(ativa=True).count(),
         'requisicoes_concluidas': Requisicao.objects.filter(ativa=True, senhas_restantes=0).count(),
     }
@@ -584,7 +539,7 @@ def dashboard(request):
     ultimas_requisicoes = Requisicao.objects.filter(ativa=True).select_related('cliente').order_by('-data_criacao')[:5]
     
     # Clientes com mais requisições
-    top_clientes = Cliente.objects.filter(ativo=True).annotate(
+    top_clientes = Cliente.objects.annotate(
         num_requisicoes=Count('requisicoes', filter=Q(requisicoes__ativa=True))
     ).order_by('-num_requisicoes')[:5]
     
@@ -601,7 +556,7 @@ def dashboard(request):
 @user_passes_test(is_superuser, login_url='/login/')
 def requisicoes_cliente(request, cliente_id):
     """Lista todas as requisições de um cliente específico"""
-    cliente = get_object_or_404(Cliente, id=cliente_id, ativo=True)
+    cliente = get_object_or_404(Cliente, id=cliente_id)
     requisicoes = cliente.requisicoes.filter(ativa=True).order_by('-data_criacao')
     
     # Paginação
@@ -644,13 +599,16 @@ def exportar_senhas_csv(request, requisicao_id):
 def ajax_cliente_info(request, cliente_id):
     """Retorna informações do cliente em JSON"""
     try:
-        cliente = get_object_or_404(Cliente, id=cliente_id, ativo=True)
+        cliente = get_object_or_404(Cliente, id=cliente_id)
+        # Calcular total de requisições
+        total_requisicoes = cliente.requisicoes.filter(ativa=True).count()
         data = {
             'id': cliente.id,
             'nome': cliente.nome,
+            'email': cliente.email,
             'contacto': cliente.contacto,
             'endereco': cliente.endereco,
-            'total_requisicoes': cliente.total_requisicoes,
+            'total_requisicoes': total_requisicoes,
         }
         return JsonResponse(data)
     except:

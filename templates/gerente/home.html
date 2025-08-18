@@ -1,0 +1,114 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bem-vindo</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <style>
+        body {
+            background: #1e293b;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .navbar {
+            z-index: 100;
+            background: rgba(15, 23, 42, 0.9) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .welcome-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .welcome-box {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 50px 40px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: slideInUp 1s ease-out;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .welcome-box h1 {
+            font-size: 2.8rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #ffffff;
+            letter-spacing: -0.5px;
+        }
+        
+        .welcome-box p {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+            margin-bottom: 0;
+            font-weight: 400;
+        }
+        
+        .welcome-icon {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            color: #60a5fa;
+            filter: drop-shadow(0 2px 4px rgba(96, 165, 250, 0.3));
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .welcome-box {
+                padding: 35px 25px;
+                margin: 20px;
+            }
+            
+            .welcome-box h1 {
+                font-size: 2.2rem;
+            }
+            
+            .welcome-box p {
+                font-size: 1.1rem;
+            }
+            
+            .welcome-icon {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Include Navbar -->
+    {% include 'gerente/navbar.html' %}
+
+    <div class="welcome-container">
+        <div class="welcome-box">
+            <div class="welcome-icon">💼</div>
+            <h1>Bem-vindo ao Sistema</h1>
+        </div>
+    </div>
+
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

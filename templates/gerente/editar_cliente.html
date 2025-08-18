@@ -87,7 +87,6 @@
                     <strong>Requisição #{{ requisicao.id }}</strong>
                     <span class="requisicao-date">{{ requisicao.data_criacao|date:"d/m/Y" }}</span>
                 </div>
-                <a href="{% url 'detalhes_requisicao' requisicao.id %}" class="btn-link">Ver Detalhes</a>
             </div>
             {% endfor %}
             {% if cliente.requisicoes.count > 5 %}
