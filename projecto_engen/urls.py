@@ -1,12 +1,16 @@
 # urls.py
+from django.contrib import admin
 from django.urls import path
 from gerente import views
 
 urlpatterns = [
+    path('admin/', admin.site.urls),
+
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('', views.dashboard_view, name='dashboard'),  # ou redirecionar para dashboard
     path('dashboard/', views.dashboard_view, name='dashboard'),
+    path('funcionario/dashboard/', views.funcionario_dashboard_view, name='funcionario_dashboard'),
 
     path('funcionarios/', views.funcionarios, name='funcionarios'),
     path('funcionarios/adicionar/', views.adicionar_funcionario, name='adicionar_funcionario'),

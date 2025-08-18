@@ -18,51 +18,63 @@ from openpyxl import Workbook
 logger = logging.getLogger(__name__)
 
 def is_superuser(user):
-    """Verifica se o usuário é superuser"""
-    return user.is_superuser
+   """Verifica se o usuário é superuser"""
+   return user.is_superuser
+
+def is_funcionario(user):
+   """Verifica se o usuário é funcionário"""
+   return user.groups.filter(name='Funcionarios').exists()
 
 def login_view(request):
-    """View para página de login - apenas para superusuários"""
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        
-        # Autentica o usuário
-        user = authenticate(request, username=username, password=password)
-        
-        if user is not None:
-            # Verifica se o usuário é superusuário
-            if user.is_superuser:
-                login(request, user)
-                # Sempre redireciona para dashboard, ignorando o parâmetro 'next'
-                return redirect('dashboard')
-            else:
-                messages.error(request, 'Acesso negado. Apenas administradores podem acessar o sistema.')
-        else:
-            messages.error(request, 'Username ou senha incorretos')
-    
-    return render(request, 'gerente/login.html')
+   """View para página de login - para superusuários e funcionários"""
+   if request.method == 'POST':
+       username = request.POST.get('username')
+       password = request.POST.get('password')
+       
+       # Autentica o usuário
+       user = authenticate(request, username=username, password=password)
+       
+       if user is not None:
+           # Verifica se o usuário é superusuário ou funcionário
+           if user.is_superuser:
+               login(request, user)
+               return redirect('dashboard')
+           elif user.groups.filter(name='Funcionarios').exists():
+               login(request, user)
+               return redirect('funcionario_dashboard')
+           else:
+               messages.error(request, 'Acesso negado. Apenas administradores e funcionários podem acessar o sistema.')
+       else:
+           messages.error(request, 'Username ou senha incorretos')
+   
+   return render(request, 'gerente/login.html')
 
 @user_passes_test(is_superuser, login_url='/login/')
 def dashboard_view(request):
-    total_funcionarios = Funcionario.objects.count()
-    total_clientes = Cliente.objects.count()
-    total_requisicoes = Requisicao.objects.count()
-    requisicoes_pendentes = Requisicao.objects.filter(senhas_restantes__gt=0).count()
+   total_funcionarios = Funcionario.objects.count()
+   total_clientes = Cliente.objects.count()
+   total_requisicoes = Requisicao.objects.count()
+   requisicoes_pendentes = Requisicao.objects.filter(senhas_restantes__gt=0).count()
 
-    context = {
-        'total_funcionarios': total_funcionarios,
-        'total_clientes': total_clientes,
-        'total_requisicoes': total_requisicoes,
-        'requisicoes_pendentes': requisicoes_pendentes,
-    }
-    return render(request, 'gerente/dashboard.html', context)
+   context = {
+       'total_funcionarios': total_funcionarios,
+       'total_clientes': total_clientes,
+       'total_requisicoes': total_requisicoes,
+       'requisicoes_pendentes': requisicoes_pendentes,
+   }
+   return render(request, 'gerente/dashboard.html', context)
+
+@user_passes_test(is_funcionario, login_url='/login/')
+def funcionario_dashboard_view(request):
+   # Dashboard específico para funcionários
+   
+   return render(request, 'gerente/dashboard_funcionario.html')
 
 def logout_view(request):
-    """View para logout"""
-    logout(request)
-    messages.success(request, 'Você foi desconectado com sucesso')
-    return redirect('login')
+   """View para logout"""
+   logout(request)
+   messages.success(request, 'Você foi desconectado com sucesso')
+   return redirect('login')
 
 # ================================
 # VIEWS DE FUNCIONÁRIOS
