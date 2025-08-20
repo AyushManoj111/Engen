@@ -8,7 +8,7 @@ from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.db import transaction
-from .models import Funcionario, Cliente, Requisicao, Senha
+from .models import Funcionario, Cliente, RequisicaoSenhas, Senha, RequisicaoSaldo
 import logging
 import csv
 from django.http import HttpResponse
@@ -41,9 +41,9 @@ def login_admin_view(request):
 def dashboard_view(request):
     total_funcionarios = Funcionario.objects.count()
     total_clientes = Cliente.objects.count()
-    total_requisicoes = Requisicao.objects.count()
+    total_requisicoes = RequisicaoSenhas.objects.count()
 
-    requisicoes = Requisicao.objects.prefetch_related('lista_senhas')
+    requisicoes = RequisicaoSenhas.objects.prefetch_related('lista_senhas')
     requisicoes_pendentes = sum(1 for r in requisicoes if r.senhas_restantes > 0)
 
     context = {
@@ -292,14 +292,14 @@ def deletar_cliente(request, cliente_id):
 
 
 # ================================
-# VIEWS DE REQUISIÇÕES
+# VIEWS DE REQUISIÇÕES SENHA
 # ================================
 
 @user_passes_test(is_superuser, login_url='/login/')
 def requisicoes(request):
     """Lista todas as requisições"""
     requisicoes = (
-        Requisicao.objects.filter(ativa=True)
+        RequisicaoSenhas.objects.filter(ativa=True)
         .select_related('cliente')
         .prefetch_related('lista_senhas')  # otimiza cálculo de senhas usadas/restantes
         .order_by('-data_criacao')
@@ -372,11 +372,11 @@ def adicionar_requisicao(request):
 
             # Usamos transaction.atomic para garantir consistência
             with transaction.atomic():
-                requisicao = Requisicao.objects.create(
+                requisicao = RequisicaoSenhas.objects.create(
                     cliente=cliente,
                     valor=valor,
                     senhas=quantidade_senhas,
-                    senhas_restantes=quantidade_senhas,
+                    # REMOVA esta linha: senhas_restantes=quantidade_senhas,
                     funcionario_responsavel=None
                 )
 
@@ -400,10 +400,11 @@ def adicionar_requisicao(request):
     
     return render(request, 'gerente/adicionar_requisicao.html', {'clientes': clientes})
 
+
 @user_passes_test(is_superuser, login_url='/login/')
 def editar_requisicao(request, requisicao_id):
     """Editar requisição existente"""
-    requisicao = get_object_or_404(Requisicao, id=requisicao_id, ativa=True)
+    requisicao = get_object_or_404(RequisicaoSenhas, id=requisicao_id, ativa=True)
     clientes = Cliente.objects.order_by('nome')
     
     if request.method == 'POST':
@@ -484,7 +485,7 @@ def editar_requisicao(request, requisicao_id):
 @user_passes_test(is_superuser, login_url='/login/')
 def deletar_requisicao(request, requisicao_id):
     """Deletar requisição (soft delete)"""
-    requisicao = get_object_or_404(Requisicao, id=requisicao_id, ativa=True)
+    requisicao = get_object_or_404(RequisicaoSenhas, id=requisicao_id, ativa=True)
     
     try:
         requisicao.ativa = False
@@ -497,13 +498,170 @@ def deletar_requisicao(request, requisicao_id):
 
 @user_passes_test(is_superuser, login_url='/login/')
 def ver_senhas(request, requisicao_id):
-    requisicao = get_object_or_404(Requisicao, id=requisicao_id)
+    requisicao = get_object_or_404(RequisicaoSenhas, id=requisicao_id)
     senhas = requisicao.lista_senhas.all().order_by('data_criacao')
     return render(request, 'gerente/senhas.html', {
         'requisicao': requisicao,
         'senhas': senhas
     })
 
+# ================================
+# VIEWS DE REQUISIÇÕES SALDO
+# ================================
+
+@user_passes_test(is_superuser, login_url='/login/')
+def requisicoes_saldo(request):
+   """Lista todas as requisições de saldo"""
+   requisicoes = (
+       RequisicaoSaldo.objects.filter(ativa=True)
+       .select_related('cliente')
+       .prefetch_related('movimentos')  # otimiza cálculo de saldo restante
+       .order_by('-data_criacao')
+   )
+
+   # Filtros opcionais
+   status_filter = request.GET.get('status', '')
+   search = request.GET.get('search', '')
+
+   if search:
+       requisicoes = requisicoes.filter(
+           Q(cliente__nome__icontains=search) |
+           Q(id__icontains=search) |
+           Q(codigo__icontains=search)
+       )
+
+   # Filtragem por status (feito em Python, já que saldo_restante é @property)
+   if status_filter:
+       if status_filter == 'esgotado':
+           requisicoes = [r for r in requisicoes if r.saldo_restante == 0]
+       elif status_filter == 'baixo':
+           requisicoes = [r for r in requisicoes if 0 < r.saldo_restante <= 50]
+       elif status_filter == 'medio':
+           requisicoes = [r for r in requisicoes if 50 < r.saldo_restante <= 200]
+       elif status_filter == 'alto':
+           requisicoes = [r for r in requisicoes if r.saldo_restante > 200]
+
+   # Estatísticas
+   total_valor = sum(r.valor_total for r in requisicoes)
+   saldo_restante_total = sum(r.saldo_restante for r in requisicoes)
+
+   context = {
+       'requisicoes': requisicoes,
+       'search': search,
+       'status_filter': status_filter,
+       'total_valor': total_valor,
+       'saldo_restante_total': saldo_restante_total,
+   }
+   return render(request, 'gerente/requisicoes_saldo.html', context)
+
+
+@user_passes_test(is_superuser, login_url='/login/')
+def adicionar_requisicao_saldo(request):
+   """Adicionar nova requisição de saldo"""
+   clientes = Cliente.objects.order_by('nome')
+   
+   if request.method == 'POST':
+       try:
+           cliente_id = request.POST.get('cliente')
+           valor_total = request.POST.get('valor_total')
+           
+           if not cliente_id or not valor_total:
+               messages.error(request, 'Cliente e valor total são obrigatórios.')
+               return render(request, 'gerente/adicionar_req_saldo.html', {'clientes': clientes})
+           
+           try:
+               valor_total = float(valor_total)
+           except ValueError:
+               messages.error(request, 'Valor total deve ser um número válido.')
+               return render(request, 'gerente/adicionar_req_saldo.html', {'clientes': clientes})
+           
+           if valor_total <= 0:
+               messages.error(request, 'Valor total deve ser maior que zero.')
+               return render(request, 'gerente/adicionar_req_saldo.html', {'clientes': clientes})
+           
+           cliente = get_object_or_404(Cliente, id=cliente_id)
+
+           requisicao = RequisicaoSaldo.objects.create(
+               cliente=cliente,
+               valor_total=valor_total,
+               funcionario_responsavel=None
+           )
+           
+           messages.success(request, f'Requisição de saldo #{requisicao.id} ({requisicao.codigo}) criada com sucesso para {cliente.nome}!')
+           return redirect('requisicoes_saldo')
+           
+       except Exception as e:
+           messages.error(request, f'Erro ao criar requisição de saldo: {str(e)}')
+   
+   return render(request, 'gerente/adicionar_req_saldo.html', {'clientes': clientes})
+
+
+@user_passes_test(is_superuser, login_url='/login/')
+def editar_requisicao_saldo(request, requisicao_id):
+   """Editar requisição de saldo existente"""
+   requisicao = get_object_or_404(RequisicaoSaldo, id=requisicao_id, ativa=True)
+   clientes = Cliente.objects.order_by('nome')
+   
+   if request.method == 'POST':
+       try:
+           cliente_id = request.POST.get('cliente')
+           valor_total = request.POST.get('valor_total')
+           
+           if not cliente_id or not valor_total:
+               messages.error(request, 'Cliente e valor total são obrigatórios.')
+               return render(request, 'gerente/editar_req_saldo.html', {
+                   'requisicao': requisicao,
+                   'clientes': clientes
+               })
+           
+           try:
+               valor_total = float(valor_total)
+           except ValueError:
+               messages.error(request, 'Valor total deve ser um número válido.')
+               return render(request, 'gerente/editar_req_saldo.html', {
+                   'requisicao': requisicao,
+                   'clientes': clientes
+               })
+           
+           if valor_total <= 0:
+               messages.error(request, 'Valor total deve ser maior que zero.')
+               return render(request, 'gerente/editar_req_saldo.html', {
+                   'requisicao': requisicao,
+                   'clientes': clientes
+               })
+           
+           cliente = get_object_or_404(Cliente, id=cliente_id)
+
+           requisicao.cliente = cliente
+           requisicao.valor_total = valor_total
+           requisicao.save()
+           
+           messages.success(request, f'Requisição de saldo #{requisicao.id} atualizada com sucesso!')
+           return redirect('requisicoes_saldo')
+           
+       except Exception as e:
+           messages.error(request, f'Erro ao atualizar requisição de saldo: {str(e)}')
+   
+   context = {
+       'requisicao': requisicao,
+       'clientes': clientes,
+   }
+   return render(request, 'gerente/editar_req_saldo.html', context)
+
+
+@user_passes_test(is_superuser, login_url='/login/')
+def deletar_requisicao_saldo(request, requisicao_id):
+   """Deletar requisição de saldo (soft delete)"""
+   requisicao = get_object_or_404(RequisicaoSaldo, id=requisicao_id, ativa=True)
+   
+   try:
+       requisicao.ativa = False
+       requisicao.save()
+       messages.success(request, f'Requisição de saldo #{requisicao.id} removida com sucesso!')
+   except Exception as e:
+       messages.error(request, f'Erro ao remover requisição de saldo: {str(e)}')
+   
+   return redirect('requisicoes_saldo')
 
 # ================================
 # VIEWS ADICIONAIS
@@ -516,27 +674,27 @@ def dashboard(request):
     stats = {
         'total_funcionarios': Funcionario.objects.filter(activo=True).count(),
         'total_clientes': Cliente.objects.count(),
-        'total_requisicoes': Requisicao.objects.filter(ativa=True).count(),
-        'requisicoes_concluidas': Requisicao.objects.filter(ativa=True, senhas_restantes=0).count(),
+        'total_requisicoes': RequisicaoSenhas.objects.filter(ativa=True).count(),
+        'requisicoes_concluidas': RequisicaoSenhas.objects.filter(ativa=True, senhas_restantes=0).count(),
     }
     
     # Requisições por status
     requisicoes_status = {
-        'alto': Requisicao.objects.filter(ativa=True, senhas_restantes__gt=15).count(),
-        'medio': Requisicao.objects.filter(ativa=True, senhas_restantes__gt=5, senhas_restantes__lte=15).count(),
-        'baixo': Requisicao.objects.filter(ativa=True, senhas_restantes__gt=0, senhas_restantes__lte=5).count(),
-        'completo': Requisicao.objects.filter(ativa=True, senhas_restantes=0).count(),
+        'alto': RequisicaoSenhas.objects.filter(ativa=True, senhas_restantes__gt=15).count(),
+        'medio': RequisicaoSenhas.objects.filter(ativa=True, senhas_restantes__gt=5, senhas_restantes__lte=15).count(),
+        'baixo': RequisicaoSenhas.objects.filter(ativa=True, senhas_restantes__gt=0, senhas_restantes__lte=5).count(),
+        'completo': RequisicaoSenhas.objects.filter(ativa=True, senhas_restantes=0).count(),
     }
     
     # Valores totais
-    valores = Requisicao.objects.filter(ativa=True).aggregate(
+    valores = RequisicaoSenhas.objects.filter(ativa=True).aggregate(
         valor_total=Sum('valor'),
         senhas_total=Sum('senhas'),
         senhas_restantes_total=Sum('senhas_restantes')
     )
     
     # Últimas requisições
-    ultimas_requisicoes = Requisicao.objects.filter(ativa=True).select_related('cliente').order_by('-data_criacao')[:5]
+    ultimas_requisicoes = RequisicaoSenhas.objects.filter(ativa=True).select_related('cliente').order_by('-data_criacao')[:5]
     
     # Clientes com mais requisições
     top_clientes = Cliente.objects.annotate(
@@ -572,7 +730,7 @@ def requisicoes_cliente(request, cliente_id):
 
 @user_passes_test(is_superuser, login_url='/login/')
 def exportar_senhas_csv(request, requisicao_id):
-    requisicao = get_object_or_404(Requisicao, id=requisicao_id)
+    requisicao = get_object_or_404(RequisicaoSenhas, id=requisicao_id)
     senhas = requisicao.lista_senhas.all()
 
     response = HttpResponse(content_type='text/csv')

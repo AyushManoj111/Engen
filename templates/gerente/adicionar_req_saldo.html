@@ -1,0 +1,52 @@
+{% extends 'gerente/base.html' %}
+
+{% block title %}Nova Requisição de Saldo - ENGEN{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h2>Nova Requisição de Saldo</h2>
+    <a href="{% url 'requisicoes_saldo' %}" class="btn-secondary">
+        ← Voltar
+    </a>
+</div>
+
+<div class="form-container">
+    <div class="form-card">
+        <div class="form-header">
+            <h3>Dados da Requisição de Saldo</h3>
+        </div>
+        
+        <form method="post" action="{% url 'adicionar_requisicao_saldo' %}">
+            {% csrf_token %}
+            
+            <div class="form-body">
+                <div class="form-group">
+                    <label for="cliente">Cliente <span class="required">*</span></label>
+                    <select class="form-control" id="cliente" name="cliente" required>
+                        <option value="">Selecione um cliente</option>
+                        {% for cliente in clientes %}
+                            <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text">
+                        <a href="{% url 'adicionar_cliente' %}" class="btn-link">+ Adicionar novo cliente</a>
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label for="valor_total">Valor Total (MT) <span class="required">*</span></label>
+                    <input type="number" class="form-control" id="valor_total" name="valor_total" 
+                           step="0.01" min="0" placeholder="0.00" required>
+                    <small class="form-text">Valor total do saldo a ser creditado</small>
+                </div>
+            </div>
+
+            <div class="form-footer">
+                <a href="{% url 'requisicoes_saldo' %}" class="btn-secondary">Cancelar</a>
+                <button type="submit" class="btn-submit">Criar Requisição de Saldo</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

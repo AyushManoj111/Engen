@@ -24,7 +24,7 @@ class Cliente(models.Model):
     def __str__(self):
         return self.nome
 
-class Requisicao(models.Model):
+class RequisicaoSenhas(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='requisicoes')
     valor = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     senhas = models.PositiveIntegerField(validators=[MinValueValidator(1)])
@@ -53,7 +53,7 @@ class Requisicao(models.Model):
 
 class Senha(models.Model):
     codigo = models.CharField(max_length=20, unique=True)
-    requisicao = models.ForeignKey(Requisicao, on_delete=models.CASCADE, related_name='lista_senhas')
+    requisicao = models.ForeignKey(RequisicaoSenhas, on_delete=models.CASCADE, related_name='lista_senhas')
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='senhas')
     usada = models.BooleanField(default=False)
     data_criacao = models.DateTimeField(auto_now_add=True)
@@ -65,3 +65,33 @@ class Senha(models.Model):
     def gerar_codigo(tamanho=10):
         chars = string.ascii_uppercase + string.digits
         return ''.join(random.choices(chars, k=tamanho))
+    
+
+def gerar_codigo():
+    """Gera um código aleatório de 10 caracteres alfanuméricos"""
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+
+class RequisicaoSaldo(models.Model):
+    cliente = models.ForeignKey("Cliente", on_delete=models.CASCADE, related_name='requisicoes_saldo')
+    valor_total = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    funcionario_responsavel = models.ForeignKey("Funcionario", on_delete=models.SET_NULL, null=True, blank=True)
+    codigo = models.CharField(max_length=10, unique=True, default=gerar_codigo, editable=False)
+    data_criacao = models.DateTimeField(auto_now_add=True)
+    ativa = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"Saldo #{self.id} ({self.codigo}) - {self.cliente.nome}"
+
+    @property
+    def saldo_restante(self):
+        total_debitos = self.movimentos.aggregate(models.Sum("valor"))["valor__sum"] or 0
+        return self.valor_total - total_debitos
+    
+class Movimento(models.Model):
+    requisicao_saldo = models.ForeignKey('RequisicaoSaldo', on_delete=models.CASCADE, related_name='movimentos')
+    valor = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    descricao = models.CharField(max_length=200, blank=True)
+    data_criacao = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Movimento {self.valor} - {self.requisicao_saldo.codigo}"

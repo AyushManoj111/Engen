@@ -27,4 +27,8 @@ urlpatterns = [
     path('requisicoes/<int:requisicao_id>/senhas/', views.ver_senhas, name='ver_senhas'),
     path('requisicoes/<int:requisicao_id>/exportar/csv/', views.exportar_senhas_csv, name='exportar_senhas_csv'),
     
+    path('requisicoes-saldo/', views.requisicoes_saldo, name='requisicoes_saldo'),
+    path('requisicoes-saldo/adicionar/', views.adicionar_requisicao_saldo, name='adicionar_requisicao_saldo'),
+    path('requisicoes-saldo/<int:requisicao_id>/editar/', views.editar_requisicao_saldo, name='editar_requisicao_saldo'),
+    path('requisicoes-saldo/<int:requisicao_id>/deletar/', views.deletar_requisicao_saldo, name='deletar_requisicao_saldo'),
 ]

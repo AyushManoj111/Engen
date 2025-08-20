@@ -22,7 +22,12 @@
             </li>
             <li class="nav-item">
                 <a href="{% url 'requisicoes' %}" class="nav-link {% if request.resolver_match.url_name == 'requisicoes' %}active{% endif %}">
-                    📑 Requisições
+                    📑 Requisições-Senha
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'requisicoes_saldo' %}" class="nav-link {% if request.resolver_match.url_name == 'requisicoes_saldo' %}active{% endif %}">
+                    📑 Requisições-Saldo
                 </a>
             </li>
         </ul>

@@ -1,0 +1,105 @@
+{% extends 'gerente/base.html' %}
+
+{% block title %}Editar Requisição de Saldo - ENGEN{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h2>Editar Requisição de Saldo</h2>
+    <a href="{% url 'requisicoes_saldo' %}" class="btn-secondary">
+        ← Voltar
+    </a>
+</div>
+
+<div class="form-container">
+    <div class="form-card">
+        <div class="form-header">
+            <h3>Requisição #{{ requisicao.id }} ({{ requisicao.codigo }}) - {{ requisicao.cliente.nome }}</h3>
+        </div>
+
+        <form method="post" action="{% url 'editar_requisicao_saldo' requisicao.id %}">
+            {% csrf_token %}
+
+            <div class="form-body">
+                <div class="form-group">
+                    <label for="cliente">Cliente <span class="required">*</span></label>
+                    <select class="form-control" id="cliente" name="cliente" required>
+                        <option value="">Selecione um cliente</option>
+                        {% for cliente in clientes %}
+                        <option value="{{ cliente.id }}" {% if cliente.id == requisicao.cliente.id %}selected{% endif %}>
+                            {{ cliente.nome }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="valor_total">Valor Total (MT) <span class="required">*</span></label>
+                    <input type="number" class="form-control" id="valor_total" name="valor_total" step="0.01" min="0"
+                        value="{{ requisicao.valor_total }}" required>
+                    <small class="form-text">Valor total do saldo disponível</small>
+                </div>
+            </div>
+
+            <div class="form-footer">
+                <a href="{% url 'requisicoes_saldo' %}" class="btn-secondary">Cancelar</a>
+                <button type="submit" class="btn-submit">Atualizar Requisição de Saldo</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Informações da Requisição -->
+<div class="info-section">
+    <div class="info-card">
+        <h4>Detalhes da Requisição de Saldo</h4>
+        <div class="info-grid">
+            <div class="info-item">
+                <strong>ID da Requisição:</strong>
+                <span>#{{ requisicao.id }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Código:</strong>
+                <span><code>{{ requisicao.codigo }}</code></span>
+            </div>
+            <div class="info-item">
+                <strong>Cliente:</strong>
+                <span>{{ requisicao.cliente.nome }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Data de Criação:</strong>
+                <span>{{ requisicao.data_criacao|date:"d/m/Y H:i" }}</span>
+            </div>
+            <div class="info-item">
+                <strong>Valor Total:</strong>
+                <span class="valor-highlight">{{ requisicao.valor_total }} MT</span>
+            </div>
+            <div class="info-item">
+                <strong>Saldo Restante:</strong>
+                <span class="valor-highlight">{{ requisicao.saldo_restante }} MT</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status da Requisição -->
+<div class="info-section">
+    <div class="info-card">
+        <h4>Status da Requisição de Saldo</h4>
+        <div class="status-info">
+            {% if requisicao.saldo_restante == 0 %}
+            <div class="status-badge status-completed">✅ Saldo Esgotado</div>
+            <p>Todo o saldo foi utilizado.</p>
+            {% elif requisicao.saldo_restante <= 50 %}
+            <div class="status-badge status-warning">⚠️ Saldo Baixo</div>
+            <p>Considere recarregar ou criar uma nova requisição de saldo.</p>
+            {% elif requisicao.saldo_restante <= 200 %}
+            <div class="status-badge status-medium">🔶 Saldo Médio</div>
+            <p>Requisição em uso normal.</p>
+            {% else %}
+            <div class="status-badge status-high">🟢 Saldo Alto</div>
+            <p>Requisição com muito saldo disponível.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

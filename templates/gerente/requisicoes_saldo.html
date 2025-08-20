@@ -1,0 +1,177 @@
+{% extends 'gerente/base.html' %}
+
+{% block title %}Requisições de Saldo - ENGEN{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilos para Estatísticas */
+    .stats-container {
+        margin-top: 25px;
+    }
+
+    .stat-card {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 20px;
+    }
+
+    .stat-card h4 {
+        margin: 0 0 15px 0;
+        font-size: 1.1rem;
+        color: #495057;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+    }
+
+    .stat-item {
+        text-align: center;
+        background: white;
+        padding: 15px;
+        border-radius: 4px;
+        border: 1px solid #e9ecef;
+    }
+
+    .stat-number {
+        display: block;
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #007bff;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="content-header">
+    <h2>Requisições de Saldo</h2>
+    <a href="{% url 'adicionar_requisicao_saldo' %}" class="btn-primary">
+        + Nova Requisição de Saldo
+    </a>
+</div>
+
+<!-- Requisições Table -->
+<div class="table-container">
+    <div class="table-header">
+        <h3>Lista de Requisições de Saldo ({{ requisicoes.count }} total)</h3>
+        <div class="table-filters">
+            <select class="filter-select" id="statusFilter" onchange="filterByStatus()">
+                <option value="">Todos os Status</option>
+                <option value="esgotado">Saldo Esgotado</option>
+                <option value="baixo">Saldo Baixo</option>
+                <option value="medio">Saldo Médio</option>
+                <option value="alto">Saldo Alto</option>
+            </select>
+        </div>
+    </div>
+    <div class="table-wrapper">
+        {% if requisicoes %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Código</th>
+                    <th>Cliente</th>
+                    <th>Valor Total</th>
+                    <th>Saldo Restante</th>
+                    <th>Data Criação</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for requisicao in requisicoes %}
+                <tr
+                    data-status="{% if requisicao.saldo_restante == 0 %}esgotado{% elif requisicao.saldo_restante <= 50 %}baixo{% elif requisicao.saldo_restante <= 200 %}medio{% else %}alto{% endif %}">
+                    <td>
+                        <strong>#{{ requisicao.id }}</strong>
+                    </td>
+                    <td>
+                        <code>{{ requisicao.codigo }}</code>
+                    </td>
+                    <td>{{ requisicao.cliente.nome }}</td>
+                    <td class="valor-cell">{{ requisicao.valor_total }} MT</td>
+                    <td>
+                        <span
+                            class="senhas-restante {% if requisicao.saldo_restante == 0 %}completo{% elif requisicao.saldo_restante <= 50 %}baixo{% elif requisicao.saldo_restante <= 200 %}medio{% else %}alto{% endif %}">
+                            {{ requisicao.saldo_restante }} MT
+                        </span>
+                    </td>
+                    <td>{{ requisicao.data_criacao|date:"d/m/Y" }}</td>
+                    <td class="actions-cell">
+                        <a href="{% url 'editar_requisicao_saldo' requisicao.id %}" class="btn-action btn-edit">Editar</a>
+                        <a href="{% url 'deletar_requisicao_saldo' requisicao.id %}" class="btn-action btn-delete"
+                            onclick="return confirm('Tem certeza que deseja excluir esta requisição de saldo?')">Excluir</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>Nenhuma requisição de saldo cadastrada.</p>
+            <a href="{% url 'adicionar_requisicao_saldo' %}" class="btn-primary">
+                Criar Primeira Requisição de Saldo
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Estatísticas Rápidas -->
+{% if requisicoes %}
+<div class="stats-container">
+    <div class="stat-card">
+        <h4>Estatísticas</h4>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-number">{{ requisicoes.count }}</span>
+                <span class="stat-label">Total de Requisições</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ total_valor|default:0 }} MT</span>
+                <span class="stat-label">Valor Total</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ saldo_restante_total|default:0 }} MT</span>
+                <span class="stat-label">Saldo Restante Total</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+    function filterByStatus() {
+        const filter = document.getElementById('statusFilter').value;
+        const rows = document.querySelectorAll('tbody tr[data-status]');
+
+        rows.forEach(row => {
+            if (filter === '' || row.getAttribute('data-status') === filter) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}
