@@ -1,4 +1,4 @@
-{% extends 'gerente/base.html' %}
+{% extends "gerente/base.html" %}
 
 {% block title %}Dashboard - ENGEN{% endblock %}
 
@@ -29,6 +29,7 @@
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 1.5rem;
     padding: 1rem;
+    margin-top: 0; /* Remove margem extra do topo */
 }
 
 .stat-card {
@@ -60,13 +61,47 @@
     font-weight: 500;
     color: #555;
 }
+
+/* Ajustes responsivos */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        padding: 0.5rem;
+    }
+    
+    .stat-card {
+        padding: 1rem;
+    }
+    
+    .stat-number {
+        font-size: 1.8rem;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+    
+    .stat-number {
+        font-size: 1.6rem;
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+    }
+}
 </style>
 
-<!-- Dashboard Cards -->
-<div class="dashboard-cards">
-    <div class="card">
-        <h3 class="card-title">Bem-vindo ao Sistema ENGEN</h3>
-    </div>
+<!-- Page Header -->
+<div class="content-header">
+    <h2>Dashboard</h2>
 </div>
 
 <!-- Statistics -->
@@ -92,4 +127,4 @@
     </div>
 </div>
 
-{% endblock %}|
+{% endblock %}

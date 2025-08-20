@@ -7,22 +7,22 @@
         <ul class="nav-list">
             <li class="nav-item">
                 <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                    Dashboard
+                    📊 Dashboard
                 </a>
             </li>
             <li class="nav-item">
                 <a href="{% url 'funcionarios' %}" class="nav-link {% if request.resolver_match.url_name == 'funcionarios' %}active{% endif %}">
-                    Funcionarios
+                    👨‍💼 Funcionários
                 </a>
             </li>
             <li class="nav-item">
                 <a href="{% url 'clientes' %}" class="nav-link {% if request.resolver_match.url_name == 'clientes' %}active{% endif %}">
-                    Clientes
+                    👥 Clientes
                 </a>
             </li>
             <li class="nav-item">
                 <a href="{% url 'requisicoes' %}" class="nav-link {% if request.resolver_match.url_name == 'requisicoes' %}active{% endif %}">
-                    Requisicoes
+                    📑 Requisições
                 </a>
             </li>
         </ul>
@@ -31,31 +31,33 @@
 
 <style>
     .sidebar {
-        width: 250px;
-        background-color: #1a237e;
+        width: 240px;
+        background: linear-gradient(180deg, #111827, #1f2937);
         min-height: calc(100vh - 70px);
         position: fixed;
         left: 0;
         top: 70px;
         overflow-y: auto;
+        border-right: 1px solid rgba(255,255,255,0.1);
+        transition: width 0.3s ease;
     }
 
     .user-section {
-        padding: 20px;
-        background-color: #0d47a1;
+        padding: 25px 15px;
+        background: #1f2937;
         text-align: center;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .username {
-        color: white;
-        font-size: 16px;
-        font-weight: bold;
-        letter-spacing: 1px;
+        color: #f9fafb;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
     }
 
     .sidebar-nav {
-        padding-top: 10px;
+        padding-top: 15px;
     }
 
     .nav-list {
@@ -70,28 +72,39 @@
 
     .nav-link {
         display: block;
-        padding: 15px 20px;
-        color: #bbdefb;
+        padding: 14px 20px;
+        color: #9ca3af;
         text-decoration: none;
         font-size: 14px;
+        font-weight: 500;
         transition: all 0.3s ease;
         border-left: 3px solid transparent;
     }
 
     .nav-link:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-        color: white;
-        border-left-color: #e53e3e;
+        background: rgba(255, 255, 255, 0.05);
+        color: #ffffff;
+        border-left-color: #3b82f6;
     }
 
     .nav-link.active {
-        background-color: white;
-        color: #1a237e;
-        border-left-color: #e53e3e;
-        font-weight: 500;
+        background: rgba(59, 130, 246, 0.15);
+        color: #3b82f6;
+        border-left-color: #3b82f6;
+        font-weight: 600;
+        box-shadow: inset 2px 0 8px rgba(59, 130, 246, 0.3);
     }
 
-    /* Responsive */
+    /* Scrollbar custom */
+    .sidebar::-webkit-scrollbar {
+        width: 6px;
+    }
+    .sidebar::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.15);
+        border-radius: 4px;
+    }
+
+    /* Responsivo */
     @media (max-width: 768px) {
         .sidebar {
             width: 100%;
@@ -99,13 +112,8 @@
             min-height: auto;
             top: 0;
         }
-        
-        .user-section {
-            padding: 15px;
-        }
-        
         .nav-link {
-            padding: 12px 20px;
+            padding: 12px 18px;
         }
     }
 </style>

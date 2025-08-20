@@ -1,9 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - ENGEN</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <style>
         * {
             margin: 0;
@@ -11,13 +13,26 @@
             box-sizing: border-box;
         }
 
+        html, body { 
+            height: 100%; 
+            margin: 0;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: white;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-content {
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding-top: 65px; /* Compensar altura do navbar fixo */
+            min-height: calc(100vh - 65px);
         }
 
         .login-container {
@@ -27,30 +42,7 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 400px;
-        }
-
-        .logo {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            display: flex;
-            align-items: center;
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-        }
-
-        .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: #e53e3e;
-            border-radius: 50%;
-            margin-right: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 18px;
+            border: 1px solid #e5e7eb;
         }
 
         .login-header {
@@ -92,8 +84,6 @@
             background-color: white;
         }
 
-
-
         .login-btn {
             width: 100%;
             padding: 12px;
@@ -104,6 +94,7 @@
             font-size: 16px;
             cursor: pointer;
             margin-bottom: 15px;
+            transition: background-color 0.2s;
         }
 
         .login-btn:hover {
@@ -124,37 +115,46 @@
         .signup-link a:hover {
             text-decoration: underline;
         }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding-top: 55px; /* Altura menor do navbar em mobile */
+                min-height: calc(100vh - 55px);
+            }
+            
+            .login-container {
+                margin: 20px;
+                padding: 30px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="logo">
-        <div class="logo-icon">E</div>
-        ENGEN
-    </div>
-
-    <div class="login-container">
-        <div class="login-header">
-            <h1>LOGIN</h1>
+    {% include 'gerente/navbar.html' %}
+    
+    <div class="main-content">
+        <div class="login-container">
+            <div class="login-header">
+                <h1>LOGIN ADMIN</h1>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <button type="submit" class="login-btn">Login</button>
+            </form>
         </div>
-        
-        <form method="post">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            
-
-            
-            <button type="submit" class="login-btn">Login</button>
-        </form>
     </div>
 
-
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
 </body>
 </html>

@@ -16,12 +16,13 @@
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
             overflow-x: hidden;
+            padding-top: 65px; /* Adiciona espaço para o navbar fixo */
         }
 
         .main-container {
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
+            min-height: calc(100vh - 65px); /* Subtrai a altura do navbar */
         }
 
         .content-wrapper {
@@ -34,7 +35,7 @@
             margin-left: 250px;
             padding: 30px;
             background-color: #f5f5f5;
-            min-height: calc(100vh - 70px);
+            min-height: calc(100vh - 65px); /* Subtrai a altura do navbar */
         }
 
         .content-header {
@@ -363,7 +364,7 @@
     </style>
 </head>
 
-<body>
+<body class="{% block bodyclass %}{% endblock %}">
     <div class="main-container">
         <!-- Include Navbar -->
         {% include 'gerente/navbar.html' %}
