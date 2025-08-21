@@ -27,7 +27,11 @@ SECRET_KEY = "django-insecure-by_v&5k&cayazvldq0+kxubnq*xit8734mr8t64+281+22c6et
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "engen-qd5j.onrender.com",
+    "localhost",
+    "127.0.0.1" 
+]
 
 LOGIN_URL = '/login/'
 
