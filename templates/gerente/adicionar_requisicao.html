@@ -12,10 +12,6 @@
 
 <div class="form-container">
     <div class="form-card">
-        <div class="form-header">
-            <h3>Dados da Requisição</h3>
-        </div>
-        
         <form method="post" action="{% url 'adicionar_requisicao' %}">
             {% csrf_token %}
             

@@ -2,17 +2,25 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from django.utils import timezone
 import string, random
+from django.contrib.auth.models import User
 
 class Funcionario(models.Model):
-    nome = models.CharField(max_length=100)
-    email = models.EmailField(unique=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)  # Ligação com User
     contacto = models.CharField(max_length=20, blank=True, null=True)
     morada = models.TextField(blank=True, null=True)
     activo = models.BooleanField(default=True)
     data_criacao = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.nome
+        return self.user.first_name or self.user.username
+    
+    @property
+    def nome(self):
+        return self.user.first_name or self.user.username
+    
+    @property
+    def email(self):
+        return self.user.email
 
 class Cliente(models.Model):
     nome = models.CharField(max_length=100)

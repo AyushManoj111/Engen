@@ -13,31 +13,34 @@ import logging
 import csv
 from django.http import HttpResponse
 from openpyxl import Workbook
+from django.contrib.auth.models import User, Group
+from django.db import transaction
 
 # Configurar logging
 logger = logging.getLogger(__name__)
 
-def is_superuser(user):
-   """Verifica se o usuário é superuser"""
-   return user.is_superuser
+def is_gerente(user):
+   """Verifica se o usuário é Gerente"""
+   return user.groups.filter(name='Gerente').exists()
 
-def login_admin_view(request):
-    """View para login de administradores (superusuário)"""
+
+def login_gerente_view(request):
+    """View para login de gerente"""
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
 
         user = authenticate(request, username=username, password=password)
 
-        if user is not None and user.is_superuser:
+        if user is not None and user.groups.filter(name='Gerente').exists():
             login(request, user)
             return redirect('dashboard')
         else:
-            messages.error(request, 'Apenas administradores podem acessar este login.')
+            messages.error(request, 'Apenas gerentes podem acessar este login.')
     
     return render(request, 'gerente/login.html')
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def dashboard_view(request):
     total_funcionarios = Funcionario.objects.count()
     total_clientes = Cliente.objects.count()
@@ -69,7 +72,7 @@ def home_view(request):
 # VIEWS DE FUNCIONÁRIOS
 # ================================
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def funcionarios(request):
     """Lista todos os funcionários"""
     funcionarios = Funcionario.objects.filter(activo=True).order_by('-data_criacao')
@@ -90,33 +93,47 @@ def funcionarios(request):
     return render(request, 'gerente/funcionarios.html', context)
 
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def adicionar_funcionario(request):
     """Adicionar novo funcionário"""
     if request.method == 'POST':
         try:
             nome = request.POST.get('nome', '').strip()
             email = request.POST.get('email', '').strip().lower()
+            password = request.POST.get('password', '').strip()
             contacto = request.POST.get('contacto', '').strip()
             morada = request.POST.get('morada', '').strip()
             
             # Validações básicas
-            if not nome or not email:
-                messages.error(request, 'Nome e email são obrigatórios.')
+            if not nome or not email or not password:
+                messages.error(request, 'Nome, email e password são obrigatórios.')
                 return render(request, 'gerente/adicionar_funcionario.html')
             
             # Verificar se email já existe
-            if Funcionario.objects.filter(email=email).exists():
+            if User.objects.filter(email=email).exists():
                 messages.error(request, 'Já existe um funcionário com este email.')
                 return render(request, 'gerente/adicionar_funcionario.html')
             
-            # Criar funcionário
-            funcionario = Funcionario.objects.create(
-                nome=nome,
-                email=email,
-                contacto=contacto if contacto else None,
-                morada=morada if morada else None,
-            )
+            # Criar User e Funcionario numa transação
+            with transaction.atomic():
+                # Criar User
+                user = User.objects.create_user(
+                    username=email,  # Usar email como username
+                    email=email,
+                    first_name=nome,
+                    password=password
+                )
+                
+                # Adicionar ao grupo Funcionarios automaticamente
+                funcionarios_group, created = Group.objects.get_or_create(name='Funcionarios')
+                user.groups.add(funcionarios_group)
+                
+                # Criar Funcionário
+                funcionario = Funcionario.objects.create(
+                    user=user,
+                    contacto=contacto if contacto else None,
+                    morada=morada if morada else None,
+                )
             
             messages.success(request, f'Funcionário "{funcionario.nome}" adicionado com sucesso!')
             return redirect('funcionarios')
@@ -127,7 +144,7 @@ def adicionar_funcionario(request):
     return render(request, 'gerente/adicionar_funcionario.html')
 
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def editar_funcionario(request, funcionario_id):
     """Editar funcionário existente"""
     funcionario = get_object_or_404(Funcionario, id=funcionario_id, activo=True)
@@ -136,6 +153,7 @@ def editar_funcionario(request, funcionario_id):
         try:
             nome = request.POST.get('nome', '').strip()
             email = request.POST.get('email', '').strip().lower()
+            password = request.POST.get('password', '').strip()
             contacto = request.POST.get('contacto', '').strip()
             morada = request.POST.get('morada', '').strip()
             
@@ -145,16 +163,24 @@ def editar_funcionario(request, funcionario_id):
                 return render(request, 'gerente/editar_funcionario.html', {'funcionario': funcionario})
             
             # Verificar se email já existe (exceto o atual)
-            if Funcionario.objects.filter(email=email).exclude(id=funcionario.id).exists():
+            if User.objects.filter(email=email).exclude(id=funcionario.user.id).exists():
                 messages.error(request, 'Já existe outro funcionário com este email.')
                 return render(request, 'gerente/editar_funcionario.html', {'funcionario': funcionario})
             
-            # Atualizar funcionário
-            funcionario.nome = nome
-            funcionario.email = email
-            funcionario.contacto = contacto if contacto else None
-            funcionario.morada = morada if morada else None
-            funcionario.save()
+            # Atualizar User e Funcionario
+            with transaction.atomic():
+                # Atualizar User
+                funcionario.user.first_name = nome
+                funcionario.user.email = email
+                funcionario.user.username = email
+                if password:  # Só atualiza password se fornecida
+                    funcionario.user.set_password(password)
+                funcionario.user.save()
+                
+                # Atualizar Funcionário
+                funcionario.contacto = contacto if contacto else None
+                funcionario.morada = morada if morada else None
+                funcionario.save()
             
             messages.success(request, f'Funcionário "{funcionario.nome}" atualizado com sucesso!')
             return redirect('funcionarios')
@@ -165,7 +191,7 @@ def editar_funcionario(request, funcionario_id):
     return render(request, 'gerente/editar_funcionario.html', {'funcionario': funcionario})
 
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def deletar_funcionario(request, funcionario_id):
     """Deletar funcionário (soft delete)"""
     funcionario = get_object_or_404(Funcionario, id=funcionario_id, activo=True)
@@ -184,7 +210,7 @@ def deletar_funcionario(request, funcionario_id):
 # VIEWS DE CLIENTES
 # ================================
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def clientes(request):
     """Lista todos os clientes"""
     clientes = Cliente.objects.prefetch_related('requisicoes').order_by('-data_criacao')
@@ -206,7 +232,7 @@ def clientes(request):
     return render(request, 'gerente/clientes.html', context)
 
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def adicionar_cliente(request):
     """Adicionar novo cliente"""
     if request.method == 'POST':
@@ -238,7 +264,7 @@ def adicionar_cliente(request):
     return render(request, 'gerente/adicionar_cliente.html')
 
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def editar_cliente(request, cliente_id):
     """Editar cliente existente"""
     cliente = get_object_or_404(Cliente, id=cliente_id)
@@ -271,7 +297,7 @@ def editar_cliente(request, cliente_id):
     return render(request, 'gerente/editar_cliente.html', {'cliente': cliente})
 
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def deletar_cliente(request, cliente_id):
     """Deletar cliente"""
     cliente = get_object_or_404(Cliente, id=cliente_id)
@@ -295,7 +321,7 @@ def deletar_cliente(request, cliente_id):
 # VIEWS DE REQUISIÇÕES SENHA
 # ================================
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def requisicoes(request):
     """Lista todas as requisições"""
     requisicoes = (
@@ -342,7 +368,7 @@ def requisicoes(request):
     return render(request, 'gerente/requisicoes.html', context)
 
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def adicionar_requisicao(request):
     """Adicionar nova requisição"""
     clientes = Cliente.objects.order_by('nome')
@@ -401,7 +427,7 @@ def adicionar_requisicao(request):
     return render(request, 'gerente/adicionar_requisicao.html', {'clientes': clientes})
 
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def editar_requisicao(request, requisicao_id):
     """Editar requisição existente"""
     requisicao = get_object_or_404(RequisicaoSenhas, id=requisicao_id, ativa=True)
@@ -482,7 +508,7 @@ def editar_requisicao(request, requisicao_id):
     }
     return render(request, 'gerente/editar_requisicao.html', context)
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def deletar_requisicao(request, requisicao_id):
     """Deletar requisição (soft delete)"""
     requisicao = get_object_or_404(RequisicaoSenhas, id=requisicao_id, ativa=True)
@@ -496,7 +522,7 @@ def deletar_requisicao(request, requisicao_id):
     
     return redirect('requisicoes')
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def ver_senhas(request, requisicao_id):
     requisicao = get_object_or_404(RequisicaoSenhas, id=requisicao_id)
     senhas = requisicao.lista_senhas.all().order_by('data_criacao')
@@ -509,7 +535,7 @@ def ver_senhas(request, requisicao_id):
 # VIEWS DE REQUISIÇÕES SALDO
 # ================================
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def requisicoes_saldo(request):
    """Lista todas as requisições de saldo"""
    requisicoes = (
@@ -555,7 +581,7 @@ def requisicoes_saldo(request):
    return render(request, 'gerente/requisicoes_saldo.html', context)
 
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def adicionar_requisicao_saldo(request):
    """Adicionar nova requisição de saldo"""
    clientes = Cliente.objects.order_by('nome')
@@ -596,7 +622,7 @@ def adicionar_requisicao_saldo(request):
    return render(request, 'gerente/adicionar_req_saldo.html', {'clientes': clientes})
 
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def editar_requisicao_saldo(request, requisicao_id):
    """Editar requisição de saldo existente"""
    requisicao = get_object_or_404(RequisicaoSaldo, id=requisicao_id, ativa=True)
@@ -649,7 +675,7 @@ def editar_requisicao_saldo(request, requisicao_id):
    return render(request, 'gerente/editar_req_saldo.html', context)
 
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def deletar_requisicao_saldo(request, requisicao_id):
    """Deletar requisição de saldo (soft delete)"""
    requisicao = get_object_or_404(RequisicaoSaldo, id=requisicao_id, ativa=True)
@@ -667,7 +693,7 @@ def deletar_requisicao_saldo(request, requisicao_id):
 # VIEWS ADICIONAIS
 # ================================
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def dashboard(request):
     """Dashboard principal com estatísticas"""
     # Estatísticas gerais
@@ -711,7 +737,7 @@ def dashboard(request):
     return render(request, 'gerente/dashboard.html', context)
 
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def requisicoes_cliente(request, cliente_id):
     """Lista todas as requisições de um cliente específico"""
     cliente = get_object_or_404(Cliente, id=cliente_id)
@@ -728,7 +754,7 @@ def requisicoes_cliente(request, cliente_id):
     }
     return render(request, 'gerente/requisicoes_cliente.html', context)
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def exportar_senhas_csv(request, requisicao_id):
     requisicao = get_object_or_404(RequisicaoSenhas, id=requisicao_id)
     senhas = requisicao.lista_senhas.all()
@@ -753,7 +779,7 @@ def exportar_senhas_csv(request, requisicao_id):
 # VIEWS AJAX (OPCIONAIS)
 # ================================
 
-@user_passes_test(is_superuser, login_url='/login/')
+@user_passes_test(is_gerente, login_url='/login/')
 def ajax_cliente_info(request, cliente_id):
     """Retorna informações do cliente em JSON"""
     try:
