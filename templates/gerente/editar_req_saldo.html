@@ -38,6 +38,30 @@
                         value="{{ requisicao.valor_total }}" required>
                     <small class="form-text">Valor total do saldo disponível</small>
                 </div>
+
+                <div class="form-group">
+                    <label for="forma_pagamento">Forma de Pagamento <span class="required">*</span></label>
+                    <select class="form-control" id="forma_pagamento" name="forma_pagamento" required>
+                        <option value="">Selecione a forma de pagamento</option>
+                        <option value="transferencia" {% if requisicao.forma_pagamento == 'transferencia' %}selected{% endif %}>
+                            Transferência Bancária
+                        </option>
+                        <option value="cash" {% if requisicao.forma_pagamento == 'cash' %}selected{% endif %}>
+                            Dinheiro (Cash)
+                        </option>
+                        <option value="pos" {% if requisicao.forma_pagamento == 'pos' %}selected{% endif %}>
+                            POS (Cartão)
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="banco-group" style="display: none;">
+                    <label for="banco">Nome do Banco <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="banco" name="banco" 
+                        placeholder="Digite o nome do banco"
+                        value="{{ requisicao.banco|default:'' }}">
+                    <small class="form-text">Obrigatório para transferência bancária</small>
+                </div>
             </div>
 
             <div class="form-footer">
@@ -74,6 +98,23 @@
                 <span class="valor-highlight">{{ requisicao.valor_total }} MT</span>
             </div>
             <div class="info-item">
+                <strong>Forma de Pagamento:</strong>
+                <span>
+                    {% if requisicao.forma_pagamento == 'transferencia' %}
+                        Transferência Bancária
+                        {% if requisicao.banco %}
+                            ({{ requisicao.banco }})
+                        {% endif %}
+                    {% elif requisicao.forma_pagamento == 'cash' %}
+                        Dinheiro (Cash)
+                    {% elif requisicao.forma_pagamento == 'pos' %}
+                        POS (Cartão)
+                    {% else %}
+                        Não informado
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-item">
                 <strong>Saldo Restante:</strong>
                 <span class="valor-highlight">{{ requisicao.saldo_restante }} MT</span>
             </div>
@@ -102,4 +143,30 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const formaPagamentoSelect = document.getElementById('forma_pagamento');
+    const bancoGroup = document.getElementById('banco-group');
+    const bancoInput = document.getElementById('banco');
+
+    function toggleBancoField() {
+        if (formaPagamentoSelect.value === 'transferencia') {
+            bancoGroup.style.display = 'block';
+            bancoInput.required = true;
+        } else {
+            bancoGroup.style.display = 'none';
+            bancoInput.required = false;
+            bancoInput.value = '';
+        }
+    }
+
+    // Executar no carregamento da página
+    toggleBancoField();
+
+    // Executar quando a forma de pagamento mudar
+    formaPagamentoSelect.addEventListener('change', toggleBancoField);
+});
+</script>
+
 {% endblock %}

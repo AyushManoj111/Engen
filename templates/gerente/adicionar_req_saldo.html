@@ -35,6 +35,24 @@
                            step="0.01" min="0" placeholder="0.00" required>
                     <small class="form-text">Valor total do saldo a ser creditado</small>
                 </div>
+
+                <div class="form-group">
+                    <label for="forma_pagamento">Forma de Pagamento <span class="required">*</span></label>
+                    <select class="form-control" id="forma_pagamento" name="forma_pagamento" required
+                            onchange="toggleBancoField()">
+                        <option value="">Selecione a forma de pagamento</option>
+                        <option value="transferencia">Transferência Bancária</option>
+                        <option value="cash" selected>Dinheiro (Cash)</option>
+                        <option value="pos">POS (Cartão)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="banco_group" style="display: none;">
+                    <label for="banco">Nome do Banco <span class="required">*</span></label>
+                    <textarea class="form-control" id="banco" name="banco" rows="2"
+                        placeholder="Digite o nome do banco"></textarea>
+                    <small class="form-text">Obrigatório para transferência bancária</small>
+                </div>
             </div>
 
             <div class="form-footer">
@@ -44,5 +62,534 @@
         </form>
     </div>
 </div>
+
+<!-- Modal de Recibo -->
+{% if mostrar_recibo %}
+<div class="modal-overlay" id="reciboModal">
+    <div class="modal-container recibo-modal">
+        <div class="modal-header">
+            <h3>Recibo de Requisição de Saldo</h3>
+            <button type="button" class="modal-close" onclick="fecharRecibo()">×</button>
+        </div>
+
+        <div class="modal-body" id="reciboContent">
+            <div class="recibo-header">
+                <div class="empresa-info">
+                    <h2>{{ requisicao.empresa.nome|default:"ENGEN" }}</h2>
+                    <p>Sistema de Gestão de Requisições de Saldo</p>
+                </div>
+                <div class="recibo-numero">
+                    <p><strong>Recibo Nº:</strong> {{ requisicao.id|stringformat:"06d" }}</p>
+                    <p><strong>Código:</strong> {{ requisicao.codigo }}</p>
+                    <p><strong>Data:</strong> {{ requisicao.data_criacao|date:"d/m/Y H:i" }}</p>
+                </div>
+            </div>
+
+            <div class="recibo-divider"></div>
+
+            <div class="recibo-details">
+                <div class="detail-row">
+                    <span class="detail-label">Cliente:</span>
+                    <span class="detail-value">{{ requisicao.cliente.nome }}</span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="detail-label">Valor Total:</span>
+                    <span class="detail-value valor-destaque">{{ requisicao.valor_total|floatformat:2 }} MT</span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="detail-label">Saldo Restante:</span>
+                    <span class="detail-value valor-saldo">{{ requisicao.saldo_restante|floatformat:2 }} MT</span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="detail-label">Forma de Pagamento:</span>
+                    <span class="detail-value">
+                        {% if requisicao.forma_pagamento == 'transferencia' %}
+                        <i class="fas fa-university"></i> Transferência Bancária
+                        {% elif requisicao.forma_pagamento == 'cash' %}
+                        <i class="fas fa-money-bill-wave"></i> Dinheiro (Cash)
+                        {% elif requisicao.forma_pagamento == 'pos' %}
+                        <i class="fas fa-credit-card"></i> POS (Cartão)
+                        {% else %}
+                        {{ requisicao.get_forma_pagamento_display }}
+                        {% endif %}
+                    </span>
+                </div>
+
+                {% if requisicao.banco %}
+                <div class="detail-row">
+                    <span class="detail-label">Banco:</span>
+                    <span class="detail-value">{{ requisicao.banco }}</span>
+                </div>
+                {% endif %}
+
+                <div class="detail-row">
+                    <span class="detail-label">Status:</span>
+                    <span class="detail-value status-ativa">
+                        {% if requisicao.ativa %}Ativa{% else %}Inativa{% endif %}
+                    </span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="detail-label">Tipo:</span>
+                    <span class="detail-value">
+                        <i class="fas fa-wallet"></i> Requisição de Saldo
+                    </span>
+                </div>
+            </div>
+
+            <div class="recibo-divider"></div>
+
+            <div class="recibo-info-box">
+                <h4><i class="fas fa-info-circle"></i> Informações Importantes</h4>
+                <ul>
+                    <li>Este saldo poderá ser utilizado para movimentações futuras</li>
+                    <li>O saldo restante será atualizado a cada movimentação</li>
+                    <li>Guarde este recibo como comprovante de pagamento</li>
+                    <li>Em caso de dúvidas, entre em contato conosco</li>
+                </ul>
+            </div>
+
+            <div class="recibo-footer">
+                <p class="recibo-assinatura">
+                    _________________________________<br>
+                    Assinatura do Responsável
+                </p>
+                <p class="recibo-data-impressao">
+                    Impresso em: {% now "d/m/Y H:i:s" %}
+                </p>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="fecharRecibo()">Fechar</button>
+            <button type="button" class="btn-primary" onclick="imprimirRecibo()">
+                <i class="fas fa-print"></i> Imprimir PDF
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden data for JavaScript -->
+<script type="application/json" id="requisicao-data">
+{
+    "requisicaoId": "{{ requisicao.id|default:'' }}",
+    "hasRequisicao": {% if requisicao %}true{% else %}false{% endif %},
+    "reciboUrl": "{% if requisicao %}{% url 'gerar_recibo_saldo_pdf' requisicao.id %}{% endif %}",
+    "requisicoesUrl": "{% url 'requisicoes_saldo' %}"
+}
+</script>
+{% endif %}
+
+<style>
+    /* Estilos do Modal */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-container {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .recibo-modal {
+        max-width: 700px;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #e5e5e5;
+        background: #f8f9fa;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        color: #333;
+        font-size: 1.5rem;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: background-color 0.3s;
+    }
+
+    .modal-close:hover {
+        background-color: #f0f0f0;
+        color: #333;
+    }
+
+    .modal-body {
+        padding: 30px;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 20px;
+        border-top: 1px solid #e5e5e5;
+        background: #f8f9fa;
+        border-radius: 0 0 8px 8px;
+    }
+
+    /* Estilos do Recibo */
+    .recibo-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+    }
+
+    .empresa-info h2 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 2rem;
+        font-weight: bold;
+    }
+
+    .empresa-info p {
+        margin: 5px 0 0 0;
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .recibo-numero {
+        text-align: right;
+    }
+
+    .recibo-numero p {
+        margin: 5px 0;
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .recibo-divider {
+        height: 2px;
+        background: linear-gradient(to right, #27ae60, #2c3e50);
+        margin: 20px 0;
+        border-radius: 1px;
+    }
+
+    .recibo-details {
+        margin: 25px 0;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-label {
+        font-weight: 600;
+        color: #2c3e50;
+        min-width: 180px;
+    }
+
+    .detail-value {
+        color: #333;
+        text-align: right;
+        flex: 1;
+    }
+
+    .detail-value i {
+        margin-right: 8px;
+        color: #27ae60;
+    }
+
+    .valor-destaque {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #27ae60;
+    }
+
+    .valor-saldo {
+        font-weight: bold;
+        color: #3498db;
+    }
+
+    .status-ativa {
+        color: #27ae60;
+        font-weight: bold;
+    }
+
+    .status-inativa {
+        color: #e74c3c;
+        font-weight: bold;
+    }
+
+    /* Caixa de informações */
+    .recibo-info-box {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .recibo-info-box h4 {
+        margin: 0 0 15px 0;
+        color: #495057;
+        font-size: 1rem;
+    }
+
+    .recibo-info-box h4 i {
+        margin-right: 8px;
+        color: #17a2b8;
+    }
+
+    .recibo-info-box ul {
+        margin: 0;
+        padding-left: 20px;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .recibo-info-box li {
+        margin-bottom: 8px;
+    }
+
+    .recibo-footer {
+        margin-top: 30px;
+        text-align: center;
+    }
+
+    .recibo-assinatura {
+        margin: 30px 0;
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .recibo-data-impressao {
+        margin: 10px 0 0 0;
+        color: #999;
+        font-size: 0.8rem;
+    }
+
+    /* Botões */
+    .btn-primary {
+        background: #27ae60;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background-color 0.3s;
+    }
+
+    .btn-primary:hover {
+        background: #219a52;
+    }
+
+    .btn-secondary {
+        background: #95a5a6;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        transition: background-color 0.3s;
+    }
+
+    .btn-secondary:hover {
+        background: #7f8c8d;
+        color: white;
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+        .recibo-header {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .recibo-numero {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .detail-row {
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .detail-label {
+            min-width: auto;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            text-align: left;
+        }
+
+        .modal-footer {
+            flex-direction: column;
+        }
+
+        .modal-footer button {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    @media print {
+
+        .modal-overlay,
+        .modal-header,
+        .modal-footer {
+            display: none !important;
+        }
+
+        .modal-container {
+            box-shadow: none;
+            max-width: none;
+            width: 100%;
+            max-height: none;
+        }
+
+        .modal-body {
+            padding: 0;
+        }
+    }
+</style>
+
+<script>
+    function toggleBancoField() {
+        const formaPagamento = document.getElementById('forma_pagamento').value;
+        const bancoGroup = document.getElementById('banco_group');
+        const bancoField = document.getElementById('banco');
+
+        if (formaPagamento === 'transferencia') {
+            bancoGroup.style.display = 'block';
+            bancoField.required = true;
+        } else {
+            bancoGroup.style.display = 'none';
+            bancoField.required = false;
+            bancoField.value = '';
+        }
+    }
+
+    // Get configuration data from JSON script tag
+    function getConfigData() {
+        const configElement = document.getElementById('requisicao-data');
+        if (configElement) {
+            try {
+                return JSON.parse(configElement.textContent);
+            } catch (e) {
+                console.error('Error parsing config data:', e);
+                return {};
+            }
+        }
+        return {};
+    }
+
+    function fecharRecibo() {
+        const modal = document.getElementById('reciboModal');
+        if (modal) {
+            modal.style.display = 'none';
+            // Redirecionar para lista de requisições de saldo após fechar
+            const config = getConfigData();
+            if (config.requisicoesUrl) {
+                window.location.href = config.requisicoesUrl;
+            } else {
+                // Fallback URL
+                window.location.href = '/requisicoes-saldo/';
+            }
+        }
+    }
+
+    function imprimirRecibo() {
+        const config = getConfigData();
+
+        // Verificar se temos requisição para gerar PDF
+        if (config.hasRequisicao && config.reciboUrl) {
+            // Abrir PDF em nova aba
+            window.open(config.reciboUrl, '_blank');
+        } else {
+            // Fallback: imprimir a página atual
+            window.print();
+        }
+    }
+
+    function baixarReciboPDF() {
+        const config = getConfigData();
+
+        if (config.hasRequisicao && config.reciboUrl) {
+            window.location.href = config.reciboUrl;
+        } else {
+            alert('Erro: Requisição não encontrada');
+        }
+    }
+
+    // Fechar modal com ESC
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            fecharRecibo();
+        }
+    });
+
+    // Fechar modal clicando fora
+    document.addEventListener('click', function (event) {
+        const modal = document.getElementById('reciboModal');
+        if (modal && event.target === modal) {
+            fecharRecibo();
+        }
+    });
+
+    // Initialize modal if present
+    document.addEventListener('DOMContentLoaded', function () {
+        const modal = document.getElementById('reciboModal');
+        if (modal) {
+            // Modal is already visible due to server-side rendering
+            console.log('Recibo de saldo modal initialized');
+        }
+    });
+</script>
 
 {% endblock %}

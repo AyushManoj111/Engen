@@ -31,4 +31,7 @@ urlpatterns = [
     path('requisicoes-saldo/adicionar/', views.adicionar_requisicao_saldo, name='adicionar_requisicao_saldo'),
     path('requisicoes-saldo/<int:requisicao_id>/editar/', views.editar_requisicao_saldo, name='editar_requisicao_saldo'),
     path('requisicoes-saldo/<int:requisicao_id>/deletar/', views.deletar_requisicao_saldo, name='deletar_requisicao_saldo'),
+
+    path('requisicao/<int:requisicao_id>/recibo-pdf/', views.gerar_recibo_pdf, name='gerar_recibo_pdf'),
+    path('requisicao-saldo/<int:requisicao_id>/recibo-pdf/', views.gerar_recibo_saldo_pdf, name='gerar_recibo_saldo_pdf'),
 ]

@@ -53,6 +53,29 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="forma_pagamento">Forma de Pagamento <span class="required">*</span></label>
+                    <select class="form-control" id="forma_pagamento" name="forma_pagamento" required>
+                        <option value="">Selecione a forma de pagamento</option>
+                        <option value="transferencia" {% if requisicao.forma_pagamento == 'transferencia' %}selected{% endif %}>
+                            Transferência Bancária
+                        </option>
+                        <option value="cash" {% if requisicao.forma_pagamento == 'cash' %}selected{% endif %}>
+                            Dinheiro (Cash)
+                        </option>
+                        <option value="pos" {% if requisicao.forma_pagamento == 'pos' %}selected{% endif %}>
+                            POS (Cartão)
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="banco-group" style="display: none;">
+                    <label for="banco">Nome do Banco <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="banco" name="banco" placeholder="Digite o nome do banco"
+                        value="{{ requisicao.banco|default:'' }}">
+                    <small class="form-text">Obrigatório para transferência bancária</small>
+                </div>
+
+                <div class="form-group">
                     <label for="observacoes">Observações</label>
                     <textarea class="form-control" id="observacoes" name="observacoes" rows="3"
                         placeholder="Observações sobre a requisição">{{ requisicao.observacoes|default:'' }}</textarea>
@@ -95,6 +118,23 @@
                 <span class="valor-highlight">{{ requisicao.valor }} MT</span>
             </div>
             <div class="info-item">
+                <strong>Forma de Pagamento:</strong>
+                <span>
+                    {% if requisicao.forma_pagamento == 'transferencia' %}
+                    Transferência Bancária
+                    {% if requisicao.banco %}
+                    ({{ requisicao.banco }})
+                    {% endif %}
+                    {% elif requisicao.forma_pagamento == 'cash' %}
+                    Dinheiro (Cash)
+                    {% elif requisicao.forma_pagamento == 'pos' %}
+                    POS (Cartão)
+                    {% else %}
+                    Não informado
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-item">
                 <strong>Progress das Senhas:</strong>
                 <span>
                     {{ requisicao.senhas_restantes }} / {{ requisicao.senhas }} restantes
@@ -115,18 +155,43 @@
             {% if requisicao.senhas_restantes == 0 %}
             <div class="status-badge status-completed">✅ Requisição Concluída</div>
             <p>Todas as senhas foram utilizadas.</p>
-            {% elif requisicao.senhas_restantes <= 5 %} <div class="status-badge status-warning">⚠️ Poucas Senhas
-                Restantes
+            {% elif requisicao.senhas_restantes <= 5 %}
+            <div class="status-badge status-warning">⚠️ Poucas Senhas Restantes</div>
+            <p>Considere recarregar ou criar uma nova requisição.</p>
+            {% elif requisicao.senhas_restantes <= 15 %}
+            <div class="status-badge status-medium">🔶 Senhas em Uso</div>
+            <p>Requisição em andamento normal.</p>
+            {% else %}
+            <div class="status-badge status-high">🟢 Muitas Senhas Disponíveis</div>
+            <p>Requisição recém-criada ou com muitas senhas restantes.</p>
+            {% endif %}
         </div>
-        <p>Considere recarregar ou criar uma nova requisição.</p>
-        {% elif requisicao.senhas_restantes <= 15 %} <div class="status-badge status-medium">🔶 Senhas em Uso
     </div>
-    <p>Requisição em andamento normal.</p>
-    {% else %}
-    <div class="status-badge status-high">🟢 Muitas Senhas Disponíveis</div>
-    <p>Requisição recém-criada ou com muitas senhas restantes.</p>
-    {% endif %}
 </div>
-</div>
-</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const formaPagamentoSelect = document.getElementById('forma_pagamento');
+        const bancoGroup = document.getElementById('banco-group');
+        const bancoInput = document.getElementById('banco');
+
+        function toggleBancoField() {
+            if (formaPagamentoSelect.value === 'transferencia') {
+                bancoGroup.style.display = 'block';
+                bancoInput.required = true;
+            } else {
+                bancoGroup.style.display = 'none';
+                bancoInput.required = false;
+                bancoInput.value = '';
+            }
+        }
+
+        // Executar no carregamento da página
+        toggleBancoField();
+
+        // Executar quando a forma de pagamento mudar
+        formaPagamentoSelect.addEventListener('change', toggleBancoField);
+    });
+</script>
+
 {% endblock %}

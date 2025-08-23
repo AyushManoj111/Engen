@@ -15,6 +15,20 @@ from django.http import HttpResponse
 from openpyxl import Workbook
 from django.contrib.auth.models import User, Group
 from django.db import transaction
+from datetime import datetime
+import io
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from decimal import Decimal, InvalidOperation
+
+try:
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import cm
+    from reportlab.lib.colors import black, blue
+    REPORTLAB_AVAILABLE = True
+except ImportError:
+    REPORTLAB_AVAILABLE = False
 
 # Configurar logging
 logger = logging.getLogger(__name__)
@@ -421,67 +435,93 @@ def requisicoes(request):
 
 @user_passes_test(is_gerente, login_url='/login/')
 def adicionar_requisicao(request):
-   """Adicionar nova requisição"""
-   empresa = get_empresa_usuario(request.user)
-   if not empresa:
-       messages.error(request, 'Empresa não encontrada.')
-       return redirect('login')
-   
-   clientes = Cliente.objects.filter(empresa=empresa).order_by('nome')
-   
-   if request.method == 'POST':
-       try:
-           cliente_id = request.POST.get('cliente')
-           valor = request.POST.get('valor')
-           quantidade_senhas = request.POST.get('quantidade_senhas')
-           
-           if not cliente_id or not valor or not quantidade_senhas:
-               messages.error(request, 'Cliente, valor e quantidade de senhas são obrigatórios.')
-               return render(request, 'gerente/adicionar_requisicao.html', {'clientes': clientes})
-           
-           try:
-               valor = float(valor)
-               quantidade_senhas = int(quantidade_senhas)
-           except ValueError:
-               messages.error(request, 'Valor e quantidade devem ser números válidos.')
-               return render(request, 'gerente/adicionar_requisicao.html', {'clientes': clientes})
-           
-           if valor <= 0 or quantidade_senhas <= 0:
-               messages.error(request, 'Valor e quantidade devem ser maiores que zero.')
-               return render(request, 'gerente/adicionar_requisicao.html', {'clientes': clientes})
-           
-           cliente = get_object_or_404(Cliente, id=cliente_id, empresa=empresa)
+    """Adicionar nova requisição"""
+    empresa = get_empresa_usuario(request.user)
+    if not empresa:
+        messages.error(request, 'Empresa não encontrada.')
+        return redirect('login')
+    
+    clientes = Cliente.objects.filter(empresa=empresa).order_by('nome')
+    
+    if request.method == 'POST':
+        try:
+            cliente_id = request.POST.get('cliente')
+            valor = request.POST.get('valor')
+            quantidade_senhas = request.POST.get('quantidade_senhas')
+            forma_pagamento = request.POST.get('forma_pagamento')
+            banco = request.POST.get('banco', '')  # NOVO CAMPO
+            observacoes = request.POST.get('observacoes', '')
+            
+            # Validações básicas
+            if not cliente_id or not valor or not quantidade_senhas or not forma_pagamento:
+                messages.error(request, 'Todos os campos obrigatórios devem ser preenchidos.')
+                return render(request, 'gerente/adicionar_requisicao.html', {'clientes': clientes})
+            
+            # Validar banco obrigatório para transferência
+            if forma_pagamento == 'transferencia' and not banco.strip():
+                messages.error(request, 'Nome do banco é obrigatório para transferência bancária.')
+                return render(request, 'gerente/adicionar_requisicao.html', {'clientes': clientes})
+            
+            try:
+                valor = float(valor)
+                quantidade_senhas = int(quantidade_senhas)
+            except ValueError:
+                messages.error(request, 'Valor e quantidade devem ser números válidos.')
+                return render(request, 'gerente/adicionar_requisicao.html', {'clientes': clientes})
+            
+            if valor <= 0 or quantidade_senhas <= 0:
+                messages.error(request, 'Valor e quantidade devem ser maiores que zero.')
+                return render(request, 'gerente/adicionar_requisicao.html', {'clientes': clientes})
+            
+            # Validar forma de pagamento
+            formas_validas = ['transferencia', 'cash', 'pos']
+            if forma_pagamento not in formas_validas:
+                messages.error(request, 'Forma de pagamento inválida.')
+                return render(request, 'gerente/adicionar_requisicao.html', {'clientes': clientes})
+            
+            cliente = get_object_or_404(Cliente, id=cliente_id, empresa=empresa)
 
-           # Usamos transaction.atomic para garantir consistência
-           with transaction.atomic():
-               requisicao = RequisicaoSenhas.objects.create(
-                   empresa=empresa,
-                   cliente=cliente,
-                   valor=valor,
-                   senhas=quantidade_senhas,
-                   funcionario_responsavel=None
-               )
+            # Usamos transaction.atomic para garantir consistência
+            with transaction.atomic():
+                requisicao = RequisicaoSenhas.objects.create(
+                    empresa=empresa,
+                    cliente=cliente,
+                    valor=valor,
+                    senhas=quantidade_senhas,
+                    forma_pagamento=forma_pagamento,
+                    banco=banco if forma_pagamento == 'transferencia' else None,  # NOVO CAMPO
+                    funcionario_responsavel=None
+                )
 
-               # Criar senhas random
-               for _ in range(quantidade_senhas):
-                   codigo = Senha.gerar_codigo()
-                   # Garantir que não repete
-                   while Senha.objects.filter(codigo=codigo).exists():
-                       codigo = Senha.gerar_codigo()
-                   Senha.objects.create(
-                       empresa=empresa,
-                       codigo=codigo,
-                       requisicao=requisicao,
-                       cliente=cliente
-                   )
-           
-           messages.success(request, f'Requisição #{requisicao.id} criada com sucesso para {cliente.nome}!')
-           return redirect('requisicoes')
-           
-       except Exception as e:
-           messages.error(request, f'Erro ao criar requisição: {str(e)}')
-   
-   return render(request, 'gerente/adicionar_requisicao.html', {'clientes': clientes})
+                # Criar senhas random
+                for _ in range(quantidade_senhas):
+                    codigo = Senha.gerar_codigo()
+                    # Garantir que não repete
+                    while Senha.objects.filter(codigo=codigo).exists():
+                        codigo = Senha.gerar_codigo()
+                    Senha.objects.create(
+                        empresa=empresa,
+                        codigo=codigo,
+                        requisicao=requisicao,
+                        cliente=cliente
+                    )
+            
+            messages.success(request, f'Requisição #{requisicao.id} criada com sucesso!')
+            
+            # Renderizar template com modal de recibo
+            return render(request, 'gerente/adicionar_requisicao.html', {
+                'clientes': clientes,
+                'mostrar_recibo': True,
+                'requisicao': requisicao
+            })
+            
+        except Exception as e:
+            messages.error(request, f'Erro ao criar requisição: {str(e)}')
+    
+    return render(request, 'gerente/adicionar_requisicao.html', {
+        'clientes': clientes,
+        'mostrar_recibo': False
+    })
 
 @user_passes_test(is_gerente, login_url='/login/')
 def editar_requisicao(request, requisicao_id):
@@ -500,9 +540,19 @@ def editar_requisicao(request, requisicao_id):
            valor = request.POST.get('valor')
            quantidade_senhas = request.POST.get('quantidade_senhas')
            senhas_restantes = request.POST.get('senhas_restantes')
+           forma_pagamento = request.POST.get('forma_pagamento')  # NOVO CAMPO
+           banco = request.POST.get('banco', '')  # NOVO CAMPO
            
-           if not cliente_id or not valor or not quantidade_senhas:
-               messages.error(request, 'Cliente, valor e quantidade de senhas são obrigatórios.')
+           if not cliente_id or not valor or not quantidade_senhas or not forma_pagamento:
+               messages.error(request, 'Cliente, valor, quantidade de senhas e forma de pagamento são obrigatórios.')
+               return render(request, 'gerente/editar_requisicao.html', {
+                   'requisicao': requisicao,
+                   'clientes': clientes
+               })
+           
+           # Validar banco obrigatório para transferência
+           if forma_pagamento == 'transferencia' and not banco.strip():
+               messages.error(request, 'Nome do banco é obrigatório para transferência bancária.')
                return render(request, 'gerente/editar_requisicao.html', {
                    'requisicao': requisicao,
                    'clientes': clientes
@@ -533,6 +583,15 @@ def editar_requisicao(request, requisicao_id):
                    'clientes': clientes
                })
            
+           # Validar forma de pagamento
+           formas_validas = ['transferencia', 'cash', 'pos']
+           if forma_pagamento not in formas_validas:
+               messages.error(request, 'Forma de pagamento inválida.')
+               return render(request, 'gerente/editar_requisicao.html', {
+                   'requisicao': requisicao,
+                   'clientes': clientes
+               })
+           
            cliente = get_object_or_404(Cliente, id=cliente_id, empresa=empresa)
 
            with transaction.atomic():
@@ -542,6 +601,8 @@ def editar_requisicao(request, requisicao_id):
                requisicao.cliente = cliente
                requisicao.valor = valor
                requisicao.senhas = quantidade_senhas
+               requisicao.forma_pagamento = forma_pagamento  # NOVO CAMPO
+               requisicao.banco = banco if forma_pagamento == 'transferencia' else None  # NOVO CAMPO
                requisicao.save()
 
                # Criar novas senhas se aumentou a quantidade
@@ -658,49 +719,115 @@ def requisicoes_saldo(request):
 
 @user_passes_test(is_gerente, login_url='/login/')
 def adicionar_requisicao_saldo(request):
-  """Adicionar nova requisição de saldo"""
-  empresa = get_empresa_usuario(request.user)
-  if not empresa:
-      messages.error(request, 'Empresa não encontrada.')
-      return redirect('login')
-  
-  clientes = Cliente.objects.filter(empresa=empresa).order_by('nome')
-  
-  if request.method == 'POST':
-      try:
-          cliente_id = request.POST.get('cliente')
-          valor_total = request.POST.get('valor_total')
-          
-          if not cliente_id or not valor_total:
-              messages.error(request, 'Cliente e valor total são obrigatórios.')
-              return render(request, 'gerente/adicionar_req_saldo.html', {'clientes': clientes})
-          
-          try:
-              valor_total = float(valor_total)
-          except ValueError:
-              messages.error(request, 'Valor total deve ser um número válido.')
-              return render(request, 'gerente/adicionar_req_saldo.html', {'clientes': clientes})
-          
-          if valor_total <= 0:
-              messages.error(request, 'Valor total deve ser maior que zero.')
-              return render(request, 'gerente/adicionar_req_saldo.html', {'clientes': clientes})
-          
-          cliente = get_object_or_404(Cliente, id=cliente_id, empresa=empresa)
+    """View para adicionar nova requisição de saldo"""
+    if request.method == 'POST':
+        try:
+            empresa = get_empresa_usuario(request.user)
+            if not empresa:
+                messages.error(request, 'Empresa não encontrada.')
+                return redirect('login')
+            
+            # Obter dados do formulário com validação
+            cliente_id = request.POST.get('cliente')
+            valor_total_str = request.POST.get('valor_total', '0')
+            forma_pagamento = request.POST.get('forma_pagamento')
+            banco = request.POST.get('banco', '').strip()
+            
+            # Validar campos obrigatórios
+            if not cliente_id:
+                messages.error(request, 'Cliente é obrigatório.')
+                return render(request, 'gerente/adicionar_req_saldo.html', {
+                    'clientes': Cliente.objects.filter(empresa=empresa)
+                })
+            
+            if not forma_pagamento:
+                messages.error(request, 'Forma de pagamento é obrigatória.')
+                return render(request, 'gerente/adicionar_req_saldo.html', {
+                    'clientes': Cliente.objects.filter(empresa=empresa)
+                })
+            
+            # CORREÇÃO PRINCIPAL: Converter valor para Decimal/float corretamente
+            try:
+                # Limpar string e converter para Decimal
+                valor_total_str = valor_total_str.replace(',', '.').strip()
+                valor_total = Decimal(valor_total_str)
+                
+                # Validar se o valor é positivo
+                if valor_total <= 0:
+                    messages.error(request, 'Valor total deve ser maior que zero.')
+                    return render(request, 'gerente/adicionar_req_saldo.html', {
+                        'clientes': Cliente.objects.filter(empresa=empresa)
+                    })
+                    
+            except (ValueError, InvalidOperation, TypeError) as e:
+                messages.error(request, f'Valor total inválido: {valor_total_str}. Use apenas números.')
+                return render(request, 'gerente/adicionar_req_saldo.html', {
+                    'clientes': Cliente.objects.filter(empresa=empresa)
+                })
+            
+            # Obter cliente
+            try:
+                cliente = Cliente.objects.get(id=int(cliente_id), empresa=empresa)
+            except (Cliente.DoesNotExist, ValueError):
+                messages.error(request, 'Cliente não encontrado.')
+                return render(request, 'gerente/adicionar_req_saldo.html', {
+                    'clientes': Cliente.objects.filter(empresa=empresa)
+                })
+            
+            # Validar banco para transferência
+            if forma_pagamento == 'transferencia' and not banco:
+                messages.error(request, 'Nome do banco é obrigatório para transferência bancária.')
+                return render(request, 'gerente/adicionar_req_saldo.html', {
+                    'clientes': Cliente.objects.filter(empresa=empresa)
+                })
+            
+            # Criar a requisição de saldo
+            requisicao = RequisicaoSaldo.objects.create(
+                empresa=empresa,
+                cliente=cliente,
+                valor_total=valor_total,
+                forma_pagamento=forma_pagamento,
+                banco=banco if forma_pagamento == 'transferencia' else None,
+                ativa=True
+            )
+            
+            # Log da transação
+            print(f"Requisição de saldo criada: ID={requisicao.id}, Valor={valor_total}, Cliente={cliente.nome}")
+            
+            messages.success(request, f'Requisição de saldo criada com sucesso! Código: {requisicao.codigo}')
+            
+            # Renderizar template com o recibo
+            return render(request, 'gerente/adicionar_req_saldo.html', {
+                'clientes': Cliente.objects.filter(empresa=empresa),
+                'mostrar_recibo': True,
+                'requisicao': requisicao
+            })
+            
+        except Exception as e:
+            # Log detalhado do erro
+            print(f"Erro ao criar requisição de saldo: {str(e)}")
+            print(f"Tipo do erro: {type(e)}")
+            import traceback
+            traceback.print_exc()
+            
+            messages.error(request, f'Erro ao criar requisição de saldo: {str(e)}')
+            return render(request, 'gerente/adicionar_req_saldo.html', {
+                'clientes': Cliente.objects.filter(empresa=empresa)
+            })
+    
+    else:
+        # GET request - mostrar formulário
+        empresa = get_empresa_usuario(request.user)
+        if not empresa:
+            messages.error(request, 'Empresa não encontrada.')
+            return redirect('login')
+            
+        clientes = Cliente.objects.filter(empresa=empresa).order_by('nome')
+        
+        return render(request, 'gerente/adicionar_req_saldo.html', {
+            'clientes': clientes
+        })
 
-          requisicao = RequisicaoSaldo.objects.create(
-              empresa=empresa,
-              cliente=cliente,
-              valor_total=valor_total,
-              funcionario_responsavel=None
-          )
-          
-          messages.success(request, f'Requisição de saldo #{requisicao.id} ({requisicao.codigo}) criada com sucesso para {cliente.nome}!')
-          return redirect('requisicoes_saldo')
-          
-      except Exception as e:
-          messages.error(request, f'Erro ao criar requisição de saldo: {str(e)}')
-  
-  return render(request, 'gerente/adicionar_req_saldo.html', {'clientes': clientes})
 
 @user_passes_test(is_gerente, login_url='/login/')
 def editar_requisicao_saldo(request, requisicao_id):
@@ -717,9 +844,19 @@ def editar_requisicao_saldo(request, requisicao_id):
       try:
           cliente_id = request.POST.get('cliente')
           valor_total = request.POST.get('valor_total')
+          forma_pagamento = request.POST.get('forma_pagamento')  # NOVO CAMPO
+          banco = request.POST.get('banco', '')  # NOVO CAMPO
           
-          if not cliente_id or not valor_total:
-              messages.error(request, 'Cliente e valor total são obrigatórios.')
+          if not cliente_id or not valor_total or not forma_pagamento:
+              messages.error(request, 'Cliente, valor total e forma de pagamento são obrigatórios.')
+              return render(request, 'gerente/editar_req_saldo.html', {
+                  'requisicao': requisicao,
+                  'clientes': clientes
+              })
+          
+          # Validar banco obrigatório para transferência
+          if forma_pagamento == 'transferencia' and not banco.strip():
+              messages.error(request, 'Nome do banco é obrigatório para transferência bancária.')
               return render(request, 'gerente/editar_req_saldo.html', {
                   'requisicao': requisicao,
                   'clientes': clientes
@@ -741,10 +878,21 @@ def editar_requisicao_saldo(request, requisicao_id):
                   'clientes': clientes
               })
           
+          # Validar forma de pagamento
+          formas_validas = ['transferencia', 'cash', 'pos']
+          if forma_pagamento not in formas_validas:
+              messages.error(request, 'Forma de pagamento inválida.')
+              return render(request, 'gerente/editar_req_saldo.html', {
+                  'requisicao': requisicao,
+                  'clientes': clientes
+              })
+          
           cliente = get_object_or_404(Cliente, id=cliente_id, empresa=empresa)
 
           requisicao.cliente = cliente
           requisicao.valor_total = valor_total
+          requisicao.forma_pagamento = forma_pagamento  # NOVO CAMPO
+          requisicao.banco = banco if forma_pagamento == 'transferencia' else None  # NOVO CAMPO
           requisicao.save()
           
           messages.success(request, f'Requisição de saldo #{requisicao.id} atualizada com sucesso!')
@@ -881,6 +1029,581 @@ def exportar_senhas_csv(request, requisicao_id):
        ])
 
    return response
+
+@user_passes_test(is_gerente, login_url='/login/')
+def gerar_recibo_pdf(request, requisicao_id):
+    """View para gerar PDF do recibo usando xhtml2pdf"""
+    try:
+        empresa = get_empresa_usuario(request.user)
+        if not empresa:
+            messages.error(request, 'Empresa não encontrada.')
+            return redirect('login')
+        
+        requisicao = get_object_or_404(RequisicaoSenhas, id=requisicao_id, empresa=empresa)
+        
+        # Template HTML para PDF
+        template_string = '''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Recibo - Requisição #{}</title>
+            <style>
+                @page {{
+                    size: A4;
+                    margin: 2cm;
+                }}
+                body {{
+                    font-family: Arial, sans-serif;
+                    font-size: 12px;
+                    line-height: 1.4;
+                    color: #333;
+                }}
+                .header {{
+                    text-align: center;
+                    margin-bottom: 30px;
+                    border-bottom: 3px solid #3498db;
+                    padding-bottom: 20px;
+                }}
+                .empresa-nome {{
+                    font-size: 28px;
+                    font-weight: bold;
+                    color: #2c3e50;
+                    margin-bottom: 8px;
+                }}
+                .empresa-desc {{
+                    color: #666;
+                    font-size: 14px;
+                    font-style: italic;
+                }}
+                .recibo-info {{
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 25px;
+                    background: #f8f9fa;
+                    padding: 15px;
+                    border-radius: 8px;
+                    border-left: 4px solid #3498db;
+                }}
+                .recibo-numero {{
+                    text-align: right;
+                }}
+                .details-table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 25px 0;
+                    background: white;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }}
+                .details-table td {{
+                    padding: 15px;
+                    border-bottom: 1px solid #e9ecef;
+                }}
+                .details-table tr:nth-child(even) {{
+                    background-color: #f8f9fa;
+                }}
+                .details-table .label {{
+                    font-weight: bold;
+                    width: 220px;
+                    color: #2c3e50;
+                    border-right: 2px solid #e9ecef;
+                }}
+                .details-table .value {{
+                    color: #495057;
+                    font-weight: 500;
+                }}
+                .valor-destaque {{
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: #3498db;
+                }}
+                .senhas-destaque {{
+                    font-size: 14px;
+                    font-weight: bold;
+                    color: #e67e22;
+                }}
+                .status-ativa {{
+                    color: #27ae60;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                }}
+                .status-inativa {{
+                    color: #e74c3c;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                }}
+                .info-box {{
+                    background: #e3f2fd;
+                    border: 1px solid #bbdefb;
+                    border-radius: 8px;
+                    padding: 20px;
+                    margin: 25px 0;
+                    border-left: 4px solid #2196f3;
+                }}
+                .info-box h4 {{
+                    margin: 0 0 15px 0;
+                    color: #0d47a1;
+                    font-size: 14px;
+                    font-weight: bold;
+                }}
+                .info-box ul {{
+                    margin: 0;
+                    padding-left: 20px;
+                    color: #495057;
+                    font-size: 11px;
+                }}
+                .info-box li {{
+                    margin-bottom: 8px;
+                    line-height: 1.3;
+                }}
+                .divider {{
+                    height: 2px;
+                    background: linear-gradient(to right, #3498db, #2c3e50);
+                    margin: 25px 0;
+                    border-radius: 1px;
+                }}
+                .signature {{
+                    margin-top: 50px;
+                    text-align: center;
+                }}
+                .signature-line {{
+                    border-top: 2px solid #333;
+                    width: 350px;
+                    margin: 40px auto 10px auto;
+                }}
+                .signature-text {{
+                    color: #666;
+                    font-size: 12px;
+                    font-weight: bold;
+                }}
+                .footer {{
+                    margin-top: 40px;
+                    text-align: center;
+                    padding-top: 20px;
+                    border-top: 1px solid #e9ecef;
+                }}
+                .footer small {{
+                    color: #6c757d;
+                    font-size: 10px;
+                }}
+                .watermark {{
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%) rotate(-45deg);
+                    font-size: 80px;
+                    color: rgba(52, 152, 219, 0.05);
+                    font-weight: bold;
+                    z-index: -1;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="watermark">SENHAS</div>
+            
+            <div class="header">
+                <div class="empresa-nome">{}</div>
+                <div class="empresa-desc">Sistema de Gestão de Requisições</div>
+            </div>
+            
+            <div class="recibo-info">
+                <div>
+                    <strong>Recibo Nº:</strong> {:06d}<br>
+                    <strong>Código:</strong> RS-{:06d}<br>
+                    <strong>Tipo:</strong> Requisição de Senhas
+                </div>
+                <div class="recibo-numero">
+                    <strong>Data de Criação:</strong> {}<br>
+                    <strong>Impresso em:</strong> {}
+                </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <table class="details-table">
+                <tr>
+                    <td class="label">Cliente:</td>
+                    <td class="value">{}</td>
+                </tr>
+                <tr>
+                    <td class="label">Valor:</td>
+                    <td class="value valor-destaque">{:.2f} MT</td>
+                </tr>
+                <tr>
+                    <td class="label">Quantidade de Senhas:</td>
+                    <td class="value senhas-destaque">{}</td>
+                </tr>
+                <tr>
+                    <td class="label">Forma de Pagamento:</td>
+                    <td class="value">{}</td>
+                </tr>
+                <tr>
+                    <td class="label">Status:</td>
+                    <td class="value {}">{}</td>
+                </tr>
+                <tr>
+                    <td class="label">Senhas Restantes:</td>
+                    <td class="value senhas-destaque">{}</td>
+                </tr>
+                <tr>
+                    <td class="label">Data de Criação:</td>
+                    <td class="value">{}</td>
+                </tr>
+            </table>
+            
+            <div class="info-box">
+                <h4>ℹ️ INFORMAÇÕES IMPORTANTES</h4>
+                <ul>
+                    <li>Estas senhas poderão ser utilizadas para movimentações na plataforma</li>
+                    <li>O número de senhas restantes será atualizado automaticamente a cada utilização</li>
+                    <li>Guarde este recibo como comprovante oficial de pagamento e aquisição de senhas</li>
+                    <li>Para consultas sobre o uso das senhas, acesse o histórico no sistema</li>
+                    <li>Em caso de dúvidas ou problemas, entre em contato com o suporte técnico</li>
+                    <li>Este documento tem validade legal como comprovante de transação</li>
+                </ul>
+            </div>
+            
+            <div class="signature">
+                <div class="signature-line"></div>
+                <p class="signature-text">Assinatura do Responsável</p>
+            </div>
+            
+            <div class="footer">
+                <small>
+                    Este documento foi gerado automaticamente pelo sistema em {} | 
+                    Recibo Nº {:06d} | 
+                    Código: RS-{:06d} | 
+                    Processado por: {}
+                </small>
+            </div>
+        </body>
+        </html>
+        '''.format(
+            requisicao.id,
+            empresa.nome,
+            requisicao.id,
+            requisicao.id,
+            requisicao.data_criacao.strftime('%d/%m/%Y às %H:%M'),
+            datetime.now().strftime('%d/%m/%Y às %H:%M:%S'),
+            requisicao.cliente.nome,
+            float(requisicao.valor),
+            requisicao.senhas,
+            requisicao.get_forma_pagamento_display(),
+            'status-ativa' if requisicao.ativa else 'status-inativa',
+            'ATIVA' if requisicao.ativa else 'INATIVA',
+            requisicao.senhas_restantes,
+            requisicao.data_criacao.strftime('%d/%m/%Y às %H:%M:%S'),
+            datetime.now().strftime('%d/%m/%Y às %H:%M:%S'),
+            requisicao.id,
+            requisicao.id,
+            request.user.get_full_name() or request.user.username
+        )
+        
+        # Gerar PDF
+        result = io.BytesIO()
+        pdf = pisa.pisaDocument(io.BytesIO(template_string.encode("UTF-8")), result)
+        
+        if not pdf.err:
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            filename = f'recibo_requisicao_{requisicao.id:06d}_{requisicao.data_criacao.strftime("%Y%m%d")}.pdf'
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+        else:
+            messages.error(request, 'Erro ao gerar PDF.')
+            return redirect('requisicoes')
+            
+    except Exception as e:
+        messages.error(request, f'Erro ao gerar PDF: {str(e)}')
+        return redirect('requisicoes')
+
+@user_passes_test(is_gerente, login_url='/login/')
+def gerar_recibo_saldo_pdf(request, requisicao_id):
+    """View para gerar PDF do recibo de requisição de saldo usando xhtml2pdf"""
+    try:
+        empresa = get_empresa_usuario(request.user)
+        if not empresa:
+            messages.error(request, 'Empresa não encontrada.')
+            return redirect('login')
+        
+        # Assumindo que você tem um modelo RequisicaoSaldo
+        # Se for o mesmo modelo, ajuste o nome conforme necessário
+        requisicao = get_object_or_404(RequisicaoSaldo, id=requisicao_id, empresa=empresa)
+        
+        # Template HTML para PDF do recibo de saldo
+        template_string = '''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Recibo de Saldo - Requisição #{}</title>
+            <style>
+                @page {{
+                    size: A4;
+                    margin: 2cm;
+                }}
+                body {{
+                    font-family: Arial, sans-serif;
+                    font-size: 12px;
+                    line-height: 1.4;
+                    color: #333;
+                }}
+                .header {{
+                    text-align: center;
+                    margin-bottom: 30px;
+                    border-bottom: 3px solid #27ae60;
+                    padding-bottom: 20px;
+                }}
+                .empresa-nome {{
+                    font-size: 28px;
+                    font-weight: bold;
+                    color: #2c3e50;
+                    margin-bottom: 8px;
+                }}
+                .empresa-desc {{
+                    color: #666;
+                    font-size: 14px;
+                    font-style: italic;
+                }}
+                .recibo-info {{
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 25px;
+                    background: #f8f9fa;
+                    padding: 15px;
+                    border-radius: 8px;
+                    border-left: 4px solid #27ae60;
+                }}
+                .recibo-numero {{
+                    text-align: right;
+                }}
+                .details-table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 25px 0;
+                    background: white;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }}
+                .details-table td {{
+                    padding: 15px;
+                    border-bottom: 1px solid #e9ecef;
+                }}
+                .details-table tr:nth-child(even) {{
+                    background-color: #f8f9fa;
+                }}
+                .details-table .label {{
+                    font-weight: bold;
+                    width: 220px;
+                    color: #2c3e50;
+                    border-right: 2px solid #e9ecef;
+                }}
+                .details-table .value {{
+                    color: #495057;
+                    font-weight: 500;
+                }}
+                .valor-destaque {{
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: #27ae60;
+                }}
+                .valor-saldo {{
+                    font-size: 14px;
+                    font-weight: bold;
+                    color: #3498db;
+                }}
+                .status-ativa {{
+                    color: #27ae60;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                }}
+                .status-inativa {{
+                    color: #e74c3c;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                }}
+                .info-box {{
+                    background: #e8f4fd;
+                    border: 1px solid #bee5eb;
+                    border-radius: 8px;
+                    padding: 20px;
+                    margin: 25px 0;
+                    border-left: 4px solid #17a2b8;
+                }}
+                .info-box h4 {{
+                    margin: 0 0 15px 0;
+                    color: #0c5460;
+                    font-size: 14px;
+                    font-weight: bold;
+                }}
+                .info-box ul {{
+                    margin: 0;
+                    padding-left: 20px;
+                    color: #495057;
+                    font-size: 11px;
+                }}
+                .info-box li {{
+                    margin-bottom: 8px;
+                    line-height: 1.3;
+                }}
+                .divider {{
+                    height: 2px;
+                    background: linear-gradient(to right, #27ae60, #2c3e50);
+                    margin: 25px 0;
+                    border-radius: 1px;
+                }}
+                .signature {{
+                    margin-top: 50px;
+                    text-align: center;
+                }}
+                .signature-line {{
+                    border-top: 2px solid #333;
+                    width: 350px;
+                    margin: 40px auto 10px auto;
+                }}
+                .signature-text {{
+                    color: #666;
+                    font-size: 12px;
+                    font-weight: bold;
+                }}
+                .footer {{
+                    margin-top: 40px;
+                    text-align: center;
+                    padding-top: 20px;
+                    border-top: 1px solid #e9ecef;
+                }}
+                .footer small {{
+                    color: #6c757d;
+                    font-size: 10px;
+                }}
+                .watermark {{
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%) rotate(-45deg);
+                    font-size: 80px;
+                    color: rgba(39, 174, 96, 0.05);
+                    font-weight: bold;
+                    z-index: -1;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="watermark">SALDO</div>
+            
+            <div class="header">
+                <div class="empresa-nome">{}</div>
+                <div class="empresa-desc">Sistema de Gestão de Requisições de Saldo</div>
+            </div>
+            
+            <div class="recibo-info">
+                <div>
+                    <strong>Recibo Nº:</strong> {:06d}<br>
+                    <strong>Código:</strong> {}<br>
+                    <strong>Tipo:</strong> Requisição de Saldo
+                </div>
+                <div class="recibo-numero">
+                    <strong>Data de Criação:</strong> {}<br>
+                    <strong>Impresso em:</strong> {}
+                </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <table class="details-table">
+                <tr>
+                    <td class="label">Cliente:</td>
+                    <td class="value">{}</td>
+                </tr>
+                <tr>
+                    <td class="label">Valor Total:</td>
+                    <td class="value valor-destaque">{:.2f} MT</td>
+                </tr>
+                <tr>
+                    <td class="label">Saldo Restante:</td>
+                    <td class="value valor-saldo">{:.2f} MT</td>
+                </tr>
+                <tr>
+                    <td class="label">Forma de Pagamento:</td>
+                    <td class="value">{}</td>
+                </tr>
+                {}
+                <tr>
+                    <td class="label">Status:</td>
+                    <td class="value {}">{}</td>
+                </tr>
+                <tr>
+                    <td class="label">Data de Criação:</td>
+                    <td class="value">{}</td>
+                </tr>
+            </table>
+            
+            <div class="info-box">
+                <h4>ℹ️ INFORMAÇÕES IMPORTANTES</h4>
+                <ul>
+                    <li>Este saldo poderá ser utilizado para movimentações futuras na plataforma</li>
+                    <li>O saldo restante será atualizado automaticamente a cada movimentação realizada</li>
+                    <li>Guarde este recibo como comprovante oficial de pagamento e crédito de saldo</li>
+                    <li>Para consultas sobre movimentações, acesse o histórico no sistema</li>
+                    <li>Em caso de dúvidas ou problemas, entre em contato com o suporte técnico</li>
+                    <li>Este documento tem validade legal como comprovante de transação</li>
+                </ul>
+            </div>
+            
+            <div class="signature">
+                <div class="signature-line"></div>
+                <p class="signature-text">Assinatura do Responsável</p>
+            </div>
+            
+            <div class="footer">
+                <small>
+                    Este documento foi gerado automaticamente pelo sistema em {} | 
+                    Recibo Nº {:06d} | 
+                    Código: {} | 
+                    Processado por: {}
+                </small>
+            </div>
+        </body>
+        </html>
+        '''.format(
+            requisicao.id,
+            empresa.nome,
+            requisicao.id,
+            getattr(requisicao, 'codigo', f'RS-{requisicao.id:06d}'),
+            requisicao.data_criacao.strftime('%d/%m/%Y às %H:%M'),
+            datetime.now().strftime('%d/%m/%Y às %H:%M:%S'),
+            requisicao.cliente.nome,
+            float(requisicao.valor_total),
+            float(requisicao.saldo_restante),
+            requisicao.get_forma_pagamento_display(),
+            # Adicionar linha do banco se for transferência
+            f'''<tr>
+                <td class="label">Banco:</td>
+                <td class="value">{requisicao.banco}</td>
+            </tr>''' if requisicao.forma_pagamento == 'transferencia' and hasattr(requisicao, 'banco') and requisicao.banco else '',
+            'status-ativa' if requisicao.ativa else 'status-inativa',
+            'ATIVA' if requisicao.ativa else 'INATIVA',
+            requisicao.data_criacao.strftime('%d/%m/%Y às %H:%M:%S'),
+            datetime.now().strftime('%d/%m/%Y às %H:%M:%S'),
+            requisicao.id,
+            getattr(requisicao, 'codigo', f'RS-{requisicao.id:06d}'),
+            request.user.get_full_name() or request.user.username
+        )
+        
+        # Gerar PDF
+        result = io.BytesIO()
+        pdf = pisa.pisaDocument(io.BytesIO(template_string.encode("UTF-8")), result)
+        
+        if not pdf.err:
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            filename = f'recibo_saldo_{requisicao.id:06d}_{requisicao.data_criacao.strftime("%Y%m%d")}.pdf'
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+        else:
+            messages.error(request, 'Erro ao gerar PDF do recibo.')
+            return redirect('requisicoes_saldo')
+            
+    except Exception as e:
+        messages.error(request, f'Erro ao gerar PDF: {str(e)}')
+        return redirect('requisicoes_saldo')
 
 # ================================
 # VIEWS AJAX (OPCIONAIS)

@@ -4,6 +4,7 @@ from django.utils import timezone
 import string, random
 from django.contrib.auth.models import User
 from empresas.models import Empresa
+from decimal import Decimal
 
 class Funcionario(models.Model):
    user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -44,9 +45,32 @@ class RequisicaoSenhas(models.Model):
    data_criacao = models.DateTimeField(auto_now_add=True)
    data_conclusao = models.DateTimeField(null=True, blank=True)
    ativa = models.BooleanField(default=True)
+   
+   FORMA_PAGAMENTO_CHOICES = [
+        ('transferencia', 'Transferência Bancária'),
+        ('cash', 'Dinheiro (Cash)'),
+        ('pos', 'POS (Cartão)'),
+    ]
+   forma_pagamento = models.CharField(
+        max_length=20,
+        choices=FORMA_PAGAMENTO_CHOICES,
+        verbose_name="Forma de Pagamento",
+        default='cash'
+    )
+   banco = models.CharField(max_length=100, null=True, blank=True, verbose_name="Nome do Banco")
+   banco = models.CharField(max_length=100, null=True, blank=True, verbose_name="Nome do Banco")
 
    def __str__(self):
        return f"Requisição #{self.id} - {self.cliente.nome}"
+
+   def get_forma_pagamento_display_icon(self):
+        """Retorna ícone para forma de pagamento"""
+        icons = {
+            'transferencia': 'fas fa-university',
+            'cash': 'fas fa-money-bill-wave',
+            'pos': 'fas fa-credit-card',
+        }
+        return icons.get(self.forma_pagamento, 'fas fa-money-bill-wave')
 
    @property
    def senhas_usadas(self):
@@ -86,21 +110,52 @@ def gerar_codigo():
    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
 
 class RequisicaoSaldo(models.Model):
-   empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name='requisicoes_saldo', null=True, blank=True)
-   cliente = models.ForeignKey("Cliente", on_delete=models.CASCADE, related_name='requisicoes_saldo')
-   valor_total = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
-   funcionario_responsavel = models.ForeignKey("Funcionario", on_delete=models.SET_NULL, null=True, blank=True)
-   codigo = models.CharField(max_length=10, unique=True, default=gerar_codigo, editable=False)
-   data_criacao = models.DateTimeField(auto_now_add=True)
-   ativa = models.BooleanField(default=True)
+    empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name='requisicoes_saldo', null=True, blank=True)
+    cliente = models.ForeignKey("Cliente", on_delete=models.CASCADE, related_name='requisicoes_saldo')
+    valor_total = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    funcionario_responsavel = models.ForeignKey("Funcionario", on_delete=models.SET_NULL, null=True, blank=True)
+    codigo = models.CharField(max_length=10, unique=True, default=gerar_codigo, editable=False)
+    data_criacao = models.DateTimeField(auto_now_add=True)
+    ativa = models.BooleanField(default=True)
+    
+    FORMA_PAGAMENTO_CHOICES = [
+        ('transferencia', 'Transferência Bancária'),
+        ('cash', 'Dinheiro (Cash)'),
+        ('pos', 'POS (Cartão)'),
+    ]
+    
+    forma_pagamento = models.CharField(
+        max_length=20,
+        choices=FORMA_PAGAMENTO_CHOICES,
+        verbose_name="Forma de Pagamento",
+        default='cash'
+    )
+    
+    # ✅ ADICIONAR ESTE CAMPO
+    banco = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        verbose_name="Nome do Banco",
+        help_text="Obrigatório apenas para transferência bancária"
+    )
 
-   def __str__(self):
-       return f"Saldo #{self.id} ({self.codigo}) - {self.cliente.nome}"
+    def get_forma_pagamento_display_icon(self):
+        """Retorna ícone para forma de pagamento"""
+        icons = {
+            'transferencia': 'fas fa-university',
+            'cash': 'fas fa-money-bill-wave',
+            'pos': 'fas fa-credit-card',
+        }
+        return icons.get(self.forma_pagamento, 'fas fa-money-bill-wave')
 
-   @property
-   def saldo_restante(self):
-       total_debitos = self.movimentos.aggregate(models.Sum("valor"))["valor__sum"] or 0
-       return self.valor_total - total_debitos
+    def __str__(self):
+        return f"Saldo #{self.id} ({self.codigo}) - {self.cliente.nome}"
+
+    @property
+    def saldo_restante(self):
+        total_debitos = self.movimentos.aggregate(models.Sum("valor"))["valor__sum"] or 0
+        return self.valor_total - total_debitos
    
 class Movimento(models.Model):
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name='movimentos', null=True, blank=True)
