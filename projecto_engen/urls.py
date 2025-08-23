@@ -5,6 +5,7 @@ from gerente import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('empresas/',include('empresas.urls')),
     path('gerente/',include('gerente.urls')),
     path('funcionario/',include('funcionario.urls')),
     path('',views.home_view,name=''),

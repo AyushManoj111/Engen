@@ -89,7 +89,6 @@
         <table>
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Cliente</th>
                     <th>Valor</th>
                     <th>Senhas</th>
@@ -102,9 +101,6 @@
                 {% for requisicao in requisicoes %}
                 <tr
                     data-status="{% if requisicao.senhas_restantes == 0 %}completo{% elif requisicao.senhas_restantes <= 5 %}baixo{% elif requisicao.senhas_restantes <= 15 %}medio{% else %}alto{% endif %}">
-                    <td>
-                        <strong>#{{ requisicao.id }}</strong>
-                    </td>
                     <td>{{ requisicao.cliente.nome }}</td>
                     <td class="valor-cell">{{ requisicao.valor }} MT</td>
                     <td>

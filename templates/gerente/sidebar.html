@@ -1,6 +1,7 @@
 <div class="sidebar">
     <div class="user-section">
-        <div class="username">USERNAME</div>
+        <div class="empresa-name">{{ empresa_atual.nome|default:"Sistema" }}</div>
+        <div class="user-info">{{ request.user.get_full_name|default:request.user.username }}</div>
     </div>
     
     <nav class="sidebar-nav">
@@ -30,6 +31,11 @@
                     📑 Requisições-Saldo
                 </a>
             </li>
+            <li class="nav-item nav-divider">
+                <a href="{% url 'logout' %}" class="nav-link nav-logout">
+                    🚪 Sair
+                </a>
+            </li>
         </ul>
     </nav>
 </div>
@@ -44,7 +50,7 @@
         top: 70px;
         overflow-y: auto;
         border-right: 1px solid rgba(255,255,255,0.1);
-        transition: width 0.3s ease;
+        z-index: 1000;
     }
 
     .user-section {
@@ -54,11 +60,20 @@
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
-    .username {
-        color: #f9fafb;
-        font-size: 15px;
-        font-weight: 600;
+    .empresa-name {
+        color: #60a5fa;
+        font-size: 16px;
+        font-weight: 700;
         letter-spacing: 0.5px;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+    }
+
+    .user-info {
+        color: #9ca3af;
+        font-size: 13px;
+        font-weight: 500;
+        opacity: 0.8;
     }
 
     .sidebar-nav {
@@ -75,6 +90,13 @@
         margin: 0;
     }
 
+    .nav-divider {
+        margin-top: auto;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding-top: 15px;
+        margin-top: 20px;
+    }
+
     .nav-link {
         display: block;
         padding: 14px 20px;
@@ -82,8 +104,8 @@
         text-decoration: none;
         font-size: 14px;
         font-weight: 500;
-        transition: all 0.3s ease;
         border-left: 3px solid transparent;
+        position: relative;
     }
 
     .nav-link:hover {
@@ -100,13 +122,42 @@
         box-shadow: inset 2px 0 8px rgba(59, 130, 246, 0.3);
     }
 
+    .nav-link.active::before {
+        content: '';
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 6px;
+        height: 6px;
+        background: #3b82f6;
+        border-radius: 50%;
+    }
+
+    .nav-logout {
+        color: #ef4444 !important;
+        opacity: 0.8;
+    }
+
+    .nav-logout:hover {
+        background: rgba(239, 68, 68, 0.1);
+        border-left-color: #ef4444;
+        color: #ef4444 !important;
+        opacity: 1;
+    }
+
     /* Scrollbar custom */
     .sidebar::-webkit-scrollbar {
         width: 6px;
     }
+    
     .sidebar::-webkit-scrollbar-thumb {
         background: rgba(255,255,255,0.15);
         border-radius: 4px;
+    }
+    
+    .sidebar::-webkit-scrollbar-thumb:hover {
+        background: rgba(255,255,255,0.25);
     }
 
     /* Responsivo */
@@ -116,9 +167,23 @@
             position: relative;
             min-height: auto;
             top: 0;
+            transform: translateX(-100%);
         }
+        
+        .sidebar.mobile-open {
+            transform: translateX(0);
+        }
+        
         .nav-link {
             padding: 12px 18px;
+        }
+        
+        .user-section {
+            padding: 20px 15px;
+        }
+        
+        .empresa-name {
+            font-size: 15px;
         }
     }
 </style>

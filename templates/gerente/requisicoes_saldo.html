@@ -89,7 +89,6 @@
         <table>
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Código</th>
                     <th>Cliente</th>
                     <th>Valor Total</th>
@@ -102,9 +101,6 @@
                 {% for requisicao in requisicoes %}
                 <tr
                     data-status="{% if requisicao.saldo_restante == 0 %}esgotado{% elif requisicao.saldo_restante <= 50 %}baixo{% elif requisicao.saldo_restante <= 200 %}medio{% else %}alto{% endif %}">
-                    <td>
-                        <strong>#{{ requisicao.id }}</strong>
-                    </td>
                     <td>
                         <code>{{ requisicao.codigo }}</code>
                     </td>
