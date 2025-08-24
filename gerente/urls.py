@@ -19,6 +19,7 @@ urlpatterns = [
     path('clientes/editar/<int:cliente_id>/', views.editar_cliente, name='editar_cliente'),
     path('clientes/deletar/<int:cliente_id>/', views.deletar_cliente, name='deletar_cliente'),
     path('clientes/<int:cliente_id>/requisicoes/', views.requisicoes_cliente, name='requisicoes_cliente'),
+    path("clientes/<int:cliente_id>/extrato/", views.extrato_cliente, name="extrato_cliente"),
     
     path('requisicoes/', views.requisicoes, name='requisicoes'),
     path('requisicoes/adicionar/', views.adicionar_requisicao, name='adicionar_requisicao'),
@@ -29,6 +30,7 @@ urlpatterns = [
     
     path('requisicoes-saldo/', views.requisicoes_saldo, name='requisicoes_saldo'),
     path('requisicoes-saldo/adicionar/', views.adicionar_requisicao_saldo, name='adicionar_requisicao_saldo'),
+    path('requisicoes-saldo/adicionar/<int:cliente_id>/', views.adicionar_requisicao_saldo, name='adicionar_req_saldo'),
     path('requisicoes-saldo/<int:requisicao_id>/editar/', views.editar_requisicao_saldo, name='editar_requisicao_saldo'),
     path('requisicoes-saldo/<int:requisicao_id>/deletar/', views.deletar_requisicao_saldo, name='deletar_requisicao_saldo'),
 

@@ -89,7 +89,7 @@
 
         .form-row {
             display: grid;
-            grid-template-columns: 1fr 1fr auto;
+            grid-template-columns: 1fr 1fr 1fr auto;
             gap: 1rem;
             align-items: end;
         }
@@ -116,6 +116,47 @@
             box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
         }
 
+        .fuel-options {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .fuel-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .fuel-option:hover {
+            border-color: #d1d5db;
+            background: #f9fafb;
+        }
+
+        .fuel-option.selected {
+            border-color: #0f172a;
+            background: #f1f5f9;
+        }
+
+        .fuel-option input[type="radio"] {
+            margin: 0;
+            padding: 0;
+            width: auto;
+        }
+
+        .fuel-option label {
+            margin: 0;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
         .scan-button {
             background: #0f172a;
             color: white;
@@ -130,6 +171,21 @@
 
         .scan-button:hover { background: #1e293b; }
         .scan-button:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        .fuel-icons {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .fuel-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+        }
+
+        .fuel-icon.gasolina { background: #ef4444; }
+        .fuel-icon.diesel { background: #22c55e; }
 
         /* Mobile */
         @media (max-width: 768px) {
@@ -147,7 +203,24 @@
                 gap: 1rem;
             }
             
+            .fuel-options {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
             .container { padding: 1rem; }
+        }
+
+        @media (max-width: 1024px) {
+            .form-row {
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+            }
+            
+            .form-row > :nth-child(3),
+            .form-row > :nth-child(4) {
+                grid-column: span 2;
+            }
         }
     </style>
 </head>
@@ -208,6 +281,25 @@
                                 placeholder="0.00 (para saldo)"
                             />
                         </div>
+                        <div class="form-group">
+                            <label>Tipo de Combustível</label>
+                            <div class="fuel-options">
+                                <div class="fuel-option" data-fuel="gasolina">
+                                    <input type="radio" id="gasolina" name="tipo_combustivel" value="gasolina">
+                                    <div class="fuel-icons">
+                                        <div class="fuel-icon gasolina"></div>
+                                        <label for="gasolina">Gasolina</label>
+                                    </div>
+                                </div>
+                                <div class="fuel-option" data-fuel="diesel">
+                                    <input type="radio" id="diesel" name="tipo_combustivel" value="diesel">
+                                    <div class="fuel-icons">
+                                        <div class="fuel-icon diesel"></div>
+                                        <label for="diesel">Diesel</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <button type="submit" class="scan-button">
                             Processar
                         </button>
@@ -220,21 +312,59 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const stringInput = document.getElementById('string');
+            const valorInput = document.getElementById('valor');
             const form = document.querySelector('form');
+            const fuelOptions = document.querySelectorAll('.fuel-option');
             const urlParams = new URLSearchParams(window.location.search);
             
+            // Limpar campos após sucesso
             if (urlParams.get('success') === '1') {
                 stringInput.value = '';
-                document.getElementById('valor').value = '';
+                valorInput.value = '';
+                // Limpar seleção de combustível
+                document.querySelectorAll('input[name="tipo_combustivel"]').forEach(radio => {
+                    radio.checked = false;
+                });
+                fuelOptions.forEach(option => option.classList.remove('selected'));
             }
 
+            // Gerenciar seleção visual dos combustíveis
+            fuelOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    const fuelType = this.dataset.fuel;
+                    const radio = document.getElementById(fuelType);
+                    
+                    // Desmarcar todos
+                    fuelOptions.forEach(opt => opt.classList.remove('selected'));
+                    document.querySelectorAll('input[name="tipo_combustivel"]').forEach(r => r.checked = false);
+                    
+                    // Marcar o selecionado
+                    this.classList.add('selected');
+                    radio.checked = true;
+                });
+            });
+
+            // Campo de combustível sempre visível - não precisa de lógica especial
+
+            // Enter no código sem valor
             stringInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter' && !document.getElementById('valor').value) {
+                if (e.key === 'Enter' && !valorInput.value) {
                     form.submit();
                 }
             });
 
+            // Validação do formulário
             form.addEventListener('submit', function(e) {
+                const valor = valorInput.value;
+                const tipoCombustivel = document.querySelector('input[name="tipo_combustivel"]:checked');
+                
+                // Se tem valor mas não tem tipo de combustível, avisar
+                if (valor && parseFloat(valor) > 0 && !tipoCombustivel) {
+                    e.preventDefault();
+                    alert('Por favor, selecione o tipo de combustível para débitos de saldo.');
+                    return;
+                }
+                
                 const button = document.querySelector('.scan-button');
                 button.textContent = 'Processando...';
                 button.disabled = true;

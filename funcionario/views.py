@@ -86,6 +86,7 @@ def scan_senha_view(request):
     if request.method == 'POST':
         codigo_string = request.POST.get('string', '').strip()
         valor = request.POST.get('valor', '').strip()
+        tipo_combustivel = request.POST.get('tipo_combustivel', '').strip()
         
         if codigo_string:
             # Verificar se é senha ou código de requisição de saldo DA EMPRESA
@@ -118,8 +119,8 @@ def scan_senha_view(request):
                         messages.error(request, f'Senha {codigo_string} já foi utilizada!')
                     else:
                         senha_encontrada.usada = True
-                        senha_encontrada.data_uso = timezone.now()  # Registrar quando foi usada
-                        senha_encontrada.funcionario_uso = request.user.funcionario if hasattr(request.user, 'funcionario') else None  # Quem escaneou
+                        senha_encontrada.data_uso = timezone.now()
+                        senha_encontrada.funcionario_uso = request.user.funcionario if hasattr(request.user, 'funcionario') else None
                         senha_encontrada.save()
                         messages.success(request, f'Senha {codigo_string} escaneada com sucesso!')
                 else:
@@ -135,18 +136,27 @@ def scan_senha_view(request):
                         elif valor_decimal > requisicao_saldo_encontrada.saldo_restante:
                             messages.error(request, f'Saldo insuficiente! Disponível: {requisicao_saldo_encontrada.saldo_restante} MT')
                         else:
-                            # Criar movimento de débito
-                            movimento = Movimento.objects.create(
-                                requisicao_saldo=requisicao_saldo_encontrada,
-                                valor=valor_decimal,
-                                descricao=f'Débito via scan - Funcionário: {request.user.get_full_name() or request.user.username}',
-                                funcionario=request.user.funcionario if hasattr(request.user, 'funcionario') else None  # Rastrear quem fez
-                            )
-                            messages.success(request, f'Débito de {valor_decimal} MT realizado com sucesso!')
+                            # Validar tipo de combustível para débitos
+                            if not tipo_combustivel or tipo_combustivel not in ['gasolina', 'diesel']:
+                                messages.error(request, 'Por favor, selecione o tipo de combustível (Gasolina ou Diesel).')
+                            else:
+                                # Criar movimento de débito com tipo de combustível
+                                movimento = Movimento.objects.create(
+                                    requisicao_saldo=requisicao_saldo_encontrada,
+                                    valor=valor_decimal,
+                                    tipo_combustivel=tipo_combustivel,
+                                    descricao=f'Débito via scan ({tipo_combustivel.title()}) - Funcionário: {request.user.get_full_name() or request.user.username}',
+                                    funcionario=request.user.funcionario if hasattr(request.user, 'funcionario') else None
+                                )
+                                
+                                messages.success(request, 
+                                    f'Débito de {valor_decimal} MT realizado com sucesso! '
+                                    f'Combustível: {tipo_combustivel.title()}'
+                                )
                     except (ValueError, TypeError):
                         messages.error(request, 'Valor inválido!')
                 else:
-                    messages.error(request, f'Para débito de saldo é necessário informar o valor.')
+                    messages.error(request, f'Para débito de saldo é necessário informar o valor e tipo de combustível.')
             
             else:
                 messages.error(request, f'Código {codigo_string} não encontrado ou não pertence à sua empresa!')
@@ -162,7 +172,7 @@ def scan_senha_view(request):
         'total_senhas': total_senhas,
         'senhas_usadas': senhas_usadas,
         'senhas_disponiveis': senhas_disponiveis,
-        'empresa': empresa,  # Para mostrar no template
+        'empresa': empresa,
         'funcionario': request.user.funcionario if hasattr(request.user, 'funcionario') else None,
     }
     

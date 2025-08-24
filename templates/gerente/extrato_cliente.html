@@ -1,0 +1,368 @@
+{% extends "gerente/base.html" %}
+{% load static %}
+
+{% block title %}Extrato - {{ cliente.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center no-print">
+                    <div>
+                        <button onclick="imprimirExtrato()" class="btn btn-primary btn-sm">
+                            <i class="fas fa-print"></i> Imprimir
+                        </button>
+                        <a href="{% url 'clientes' %}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="extrato-content" id="extratoContent">
+                    <!-- Cabeçalho para impressão -->
+                    <div class="extrato-header print-only">
+                        <div class="empresa-info">
+                            <h2>ENGEN</h2>
+                            <p>Sistema de Gestão de Requisições</p>
+                        </div>
+                        <div class="extrato-info">
+                            <h3>Extrato do Cliente</h3>
+                            <p><strong>Cliente:</strong> {{ cliente.nome }}</p>
+                            <p><strong>Data de Emissão:</strong> {% now "d/m/Y H:i" %}</p>
+                        </div>
+                    </div>
+
+                    {% if tem_movimentacao %}
+                        <!-- Tabela do Extrato -->
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Descrição</th>
+                                        <th>Forma Pagamento</th>
+                                        <th>Nº Requisição</th>
+                                        <th>Crédito</th>
+                                        <th>Débito</th>
+                                        <th>Combustível</th>
+                                        <th>Saldo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in extrato %}
+                                    <tr>
+                                        <td>{{ item.data|date:"d/m/Y H:i" }}</td>
+                                        <td>{{ item.descricao }}</td>
+                                        <td>{{ item.forma_pagamento }}</td>
+                                        <td>{{ item.numero_requisicoes }}</td>
+                                        <td>
+                                            {% if item.credito %}
+                                                <span class="text-success">+ {{ item.credito|floatformat:2 }} MT</span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if item.debito %}
+                                                <span class="text-danger">- {{ item.debito|floatformat:2 }} MT</span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if item.tipo_combustivel %}
+                                                <span class="text-warning">{{ item.tipo_combustivel }}</span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <strong class="{% if item.saldo >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                                {{ item.saldo|floatformat:2 }} MT
+                                            </strong>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Totalizadores -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <div class="row text-center">
+                                        <div class="col-md-4">
+                                            <h6><i class="fas fa-arrow-up text-success"></i> Total Entradas</h6>
+                                            <h5 class="text-success">{{ total_creditos|floatformat:2 }} MT</h5>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6><i class="fas fa-arrow-down text-danger"></i> Total Saídas</h6>
+                                            <h5 class="text-danger">{{ total_debitos|floatformat:2 }} MT</h5>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6><i class="fas fa-wallet text-primary"></i> Saldo Final</h6>
+                                            <h5 class="{% if saldo_atual >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                                {{ saldo_atual|floatformat:2 }} MT
+                                            </h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- Sem Movimentação -->
+                        <div class="text-center py-5">
+                            <i class="fas fa-file-invoice fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted">Nenhuma movimentação encontrada</h4>
+                            <p class="text-muted">Este cliente ainda não possui créditos, débitos ou requisições de senhas.</p>
+                            <div class="no-print">
+                                <a href="{% url 'adicionar_req_saldo' cliente.id %}" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Nova Requisição de Saldo
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .print-only {
+        display: none;
+    }
+
+    .extrato-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #3498db;
+    }
+
+    .empresa-info h2 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 2rem;
+        font-weight: bold;
+    }
+
+    .empresa-info p {
+        margin: 5px 0 0 0;
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .extrato-info {
+        text-align: right;
+    }
+
+    .extrato-info h3 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 1.5rem;
+    }
+
+    .extrato-info p {
+        margin: 5px 0;
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+        
+        .print-only {
+            display: block !important;
+        }
+        
+        .card {
+            box-shadow: none !important;
+            border: none !important;
+        }
+        
+        .table th {
+            background-color: #f8f9fa !important;
+            color: #000 !important;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+        
+        .text-success {
+            color: #28a745 !important;
+        }
+        
+        .text-danger {
+            color: #dc3545 !important;
+        }
+        
+        .text-warning {
+            color: #ffc107 !important;
+        }
+        
+        .alert-info {
+            background-color: #e7f3ff !important;
+            border-color: #b8daff !important;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+        
+        @page {
+            margin: 20mm;
+            size: A4;
+        }
+    }
+</style>
+
+<script>
+    function imprimirExtrato() {
+        const printWindow = window.open('', '_blank');
+        const extratoContent = document.getElementById('extratoContent').innerHTML;
+        
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>Extrato - {{ cliente.nome }}</title>
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+                <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 20px;
+                        color: #333;
+                        line-height: 1.4;
+                    }
+                    
+                    .extrato-content {
+                        max-width: 1200px;
+                        margin: 0 auto;
+                    }
+                    
+                    .print-only {
+                        display: block !important;
+                    }
+                    
+                    .no-print {
+                        display: none !important;
+                    }
+                    
+                    .extrato-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                        margin-bottom: 30px;
+                        padding-bottom: 20px;
+                        border-bottom: 2px solid #3498db;
+                    }
+                    
+                    .empresa-info h2 {
+                        margin: 0;
+                        color: #2c3e50;
+                        font-size: 2rem;
+                        font-weight: bold;
+                    }
+                    
+                    .empresa-info p {
+                        margin: 5px 0 0 0;
+                        color: #666;
+                        font-size: 0.9rem;
+                    }
+                    
+                    .extrato-info {
+                        text-align: right;
+                    }
+                    
+                    .extrato-info h3 {
+                        margin: 0;
+                        color: #2c3e50;
+                        font-size: 1.5rem;
+                    }
+                    
+                    .extrato-info p {
+                        margin: 5px 0;
+                        color: #666;
+                        font-size: 0.9rem;
+                    }
+                    
+                    .table {
+                        font-size: 0.9rem;
+                    }
+                    
+                    .table th {
+                        background-color: #f8f9fa !important;
+                        color: #000 !important;
+                        font-weight: bold;
+                    }
+                    
+                    .text-success {
+                        color: #28a745 !important;
+                    }
+                    
+                    .text-danger {
+                        color: #dc3545 !important;
+                    }
+                    
+                    .text-warning {
+                        color: #ffc107 !important;
+                    }
+                    
+                    .text-muted {
+                        color: #6c757d !important;
+                    }
+                    
+                    .alert-info {
+                        background-color: #e7f3ff !important;
+                        border-color: #b8daff !important;
+                        color: #055160 !important;
+                    }
+                    
+                    @media print {
+                        body { 
+                            margin: 0; 
+                            font-size: 12px;
+                        }
+                        
+                        .extrato-content { 
+                            margin: 0; 
+                            max-width: none; 
+                        }
+                        
+                        .table {
+                            font-size: 11px;
+                        }
+                        
+                        @page {
+                            margin: 15mm;
+                            size: A4;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="extrato-content">
+                    ${extratoContent}
+                </div>
+            </body>
+            </html>
+        `);
+        
+        printWindow.document.close();
+        printWindow.focus();
+        
+        // Aguardar carregar e imprimir
+        printWindow.onload = function() {
+            printWindow.print();
+            printWindow.close();
+        };
+    }
+</script>
+
+{% endblock %}

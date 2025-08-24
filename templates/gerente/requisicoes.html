@@ -61,6 +61,51 @@
             grid-template-columns: 1fr;
         }
     }
+
+    /* Botão Ver Senhas */
+    .btn-view {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
+        min-width: 90px;
+        justify-content: center;
+    }
+
+    .btn-view:hover {
+        background: linear-gradient(135deg, #2980b9, #21618c);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-view:active {
+        transform: translateY(0);
+    }
+
+    .btn-view:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.25);
+    }
+
+    @media (max-width: 768px) {
+        .btn-view {
+            font-size: 11px;
+            padding: 6px 10px;
+            min-width: 80px;
+        }
+    }
 </style>
 
 <div class="content-header">

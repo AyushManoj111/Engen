@@ -3,6 +3,24 @@
 {% block title %}Clientes - ENGEN{% endblock %}
 
 {% block content %}
+<style>
+    .btn-action.btn-view {
+        background-color: #17a2b8;
+        color: white;
+        padding: 4px 8px;
+        border: none;
+        border-radius: 3px;
+        text-decoration: none;
+        font-size: 0.8rem;
+        margin-right: 5px;
+    }
+    .btn-action.btn-view:hover {
+        background-color: #138496;
+        text-decoration: none;
+        color: white;
+    }
+</style>
+
 <div class="content-header">
     <h2>Clientes</h2>
     <a href="{% url 'adicionar_cliente' %}" class="btn-primary">
@@ -39,11 +57,12 @@
                     </td>
                     <td>{{ cliente.data_criacao|date:"d/m/Y" }}</td>
                     <td class="actions-cell">
+                        <a href="{% url 'extrato_cliente' cliente.id %}" class="btn-action btn-view">Extrato</a>
                         <a href="{% url 'editar_cliente' cliente.id %}" class="btn-action btn-edit">Editar</a>
-                        <a href="{% url 'deletar_cliente' cliente.id %}" 
-                           class="btn-action btn-delete" 
-                           onclick="return confirm('Tem certeza que deseja excluir {{ cliente.nome }}?')">Excluir</a>
+                        <a href="{% url 'deletar_cliente' cliente.id %}" class="btn-action btn-delete"
+                            onclick="return confirm('Tem certeza que deseja excluir {{ cliente.nome }}?')">Excluir</a>
                     </td>
+
                 </tr>
                 {% endfor %}
             </tbody>

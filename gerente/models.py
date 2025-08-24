@@ -158,15 +158,22 @@ class RequisicaoSaldo(models.Model):
         return self.valor_total - total_debitos
    
 class Movimento(models.Model):
+    TIPO_COMBUSTIVEL_CHOICES = [
+        ('gasolina', 'Gasolina'),
+        ('diesel', 'Diesel'),
+    ]
+    
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name='movimentos', null=True, blank=True)
     requisicao_saldo = models.ForeignKey('RequisicaoSaldo', on_delete=models.CASCADE, related_name='movimentos')
     valor = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    tipo_combustivel = models.CharField(max_length=10, choices=TIPO_COMBUSTIVEL_CHOICES, null=True, blank=True)
     descricao = models.CharField(max_length=200, blank=True)
     data_criacao = models.DateTimeField(auto_now_add=True)
-    funcionario = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='movimentos_realizados')  # Quem fez o débito
+    funcionario = models.ForeignKey(Funcionario, on_delete=models.SET_NULL, null=True, blank=True, related_name='movimentos_realizados')
     
     def __str__(self):
-        return f"Movimento {self.valor} - {self.requisicao_saldo.codigo}"
+        combustivel_info = f" ({self.get_tipo_combustivel_display()})" if self.tipo_combustivel else ""
+        return f"Movimento {self.valor} MT{combustivel_info} - {self.requisicao_saldo.codigo}"
     
 class LogSistema(models.Model):
     TIPOS_ACAO = [

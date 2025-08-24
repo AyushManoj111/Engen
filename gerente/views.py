@@ -3,11 +3,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.db.models import Sum, Count, Q
+from django.db import models
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.db import transaction
-from .models import Funcionario, Cliente, RequisicaoSenhas, Senha, RequisicaoSaldo
+from .models import Funcionario, Cliente, RequisicaoSenhas, Senha, RequisicaoSaldo, Movimento
 from empresas.models import Empresa
 import logging
 import csv
@@ -20,6 +21,8 @@ import io
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 from decimal import Decimal, InvalidOperation
+from itertools import chain
+from operator import attrgetter
 
 try:
     from reportlab.pdfgen import canvas
@@ -378,6 +381,131 @@ def deletar_cliente(request, cliente_id):
    
    return redirect('clientes')
 
+def extrato_cliente(request, cliente_id):
+    """Extrato simplificado sem verificação de empresa"""
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+
+    # Pegar créditos (RequisicaoSaldo)
+    creditos = RequisicaoSaldo.objects.filter(
+        cliente=cliente,
+        ativa=True
+    ).annotate(
+        tipo=models.Value("credito", output_field=models.CharField())
+    ).order_by('data_criacao')
+
+    # Pegar débitos (Movimentos)
+    debitos = Movimento.objects.filter(
+        requisicao_saldo__cliente=cliente
+    ).annotate(
+        tipo=models.Value("debito", output_field=models.CharField())
+    ).order_by('data_criacao')
+
+    # Pegar requisições de senhas
+    requisicoes_senhas = RequisicaoSenhas.objects.filter(
+        cliente=cliente,
+        ativa=True
+    ).annotate(
+        tipo=models.Value("senha", output_field=models.CharField())
+    ).order_by('data_criacao')
+
+    # Juntar todos os lançamentos numa única lista
+    lancamentos = sorted(
+        chain(creditos, debitos, requisicoes_senhas),
+        key=attrgetter("data_criacao")
+    )
+
+    extrato = []
+    saldo = Decimal("0.00")
+
+    def obter_forma_pagamento(lanc):
+        """Função auxiliar para obter forma de pagamento com tratamento seguro do banco"""
+        try:
+            forma_pagamento = lanc.get_forma_pagamento_display()
+            
+            if lanc.forma_pagamento == 'transferencia' and hasattr(lanc, 'banco') and lanc.banco:
+                # Verificar se banco é um objeto com atributo 'nome' ou uma string
+                if hasattr(lanc.banco, 'nome'):
+                    forma_pagamento = f"Transferência - {lanc.banco.nome}"
+                elif isinstance(lanc.banco, str):
+                    # Se banco for uma string, usar diretamente
+                    forma_pagamento = f"Transferência - {lanc.banco}"
+                else:
+                    # Converter para string se for outro tipo
+                    forma_pagamento = f"Transferência - {str(lanc.banco)}"
+            
+            return forma_pagamento
+        except AttributeError:
+            # Fallback caso não tenha o método get_forma_pagamento_display
+            return "Não especificado"
+        except Exception:
+            # Fallback geral para qualquer outro erro
+            return "Erro ao obter forma de pagamento"
+
+    for lanc in lancamentos:
+        if lanc.tipo == "credito":
+            # Requisição de saldo (crédito)
+            saldo += lanc.valor_total
+            
+            extrato.append({
+                "data": lanc.data_criacao,
+                "credito": lanc.valor_total,
+                "descricao": f"Requisição de saldo {lanc.codigo}",
+                "forma_pagamento": obter_forma_pagamento(lanc),
+                "debito": None,
+                "numero_requisicoes": f"Saldo #{lanc.id}",
+                "gasolina_diesel": None,
+                "valor": lanc.valor_total,
+                "saldo": saldo,
+                "tipo_combustivel": None
+            })
+            
+        elif lanc.tipo == "debito":
+            # Movimento (débito)
+            saldo -= lanc.valor
+            
+            extrato.append({
+                "data": lanc.data_criacao,
+                "credito": None,
+                "descricao": lanc.descricao or f"Débito - Movimento {lanc.requisicao_saldo.codigo}",
+                "forma_pagamento": "Consumo",
+                "debito": lanc.valor,
+                "numero_requisicoes": f"Mov #{lanc.id}",
+                "gasolina_diesel": None,  # Não mostrar valor aqui
+                "valor": lanc.valor,
+                "saldo": saldo,
+                "tipo_combustivel": lanc.get_tipo_combustivel_display() if lanc.tipo_combustivel else "Não especificado"
+            })
+            
+        else:  # senha
+            # Requisição de senhas (é um crédito)
+            saldo += lanc.valor
+            extrato.append({
+                "data": lanc.data_criacao,
+                "credito": lanc.valor,
+                "descricao": f"Requisição de {lanc.senhas} senhas",
+                "forma_pagamento": obter_forma_pagamento(lanc),
+                "debito": None,
+                "numero_requisicoes": f"Senha #{lanc.id}",
+                "gasolina_diesel": None,
+                "valor": lanc.valor,
+                "saldo": saldo,
+                "tipo_combustivel": None
+            })
+
+    # Calcular totais
+    total_creditos = sum([item["credito"] for item in extrato if item["credito"]], Decimal("0.00"))
+    total_debitos = sum([item["debito"] for item in extrato if item["debito"]], Decimal("0.00"))
+    saldo_atual = total_creditos - total_debitos
+
+    return render(request, "gerente/extrato_cliente.html", {
+        "cliente": cliente,
+        "extrato": extrato,
+        "total_creditos": total_creditos,
+        "total_debitos": total_debitos,
+        "saldo_atual": saldo_atual,
+        "tem_movimentacao": len(extrato) > 0
+    })
+
 # ================================
 # VIEWS DE REQUISIÇÕES SENHA
 # ================================
@@ -718,7 +846,7 @@ def requisicoes_saldo(request):
   return render(request, 'gerente/requisicoes_saldo.html', context)
 
 @user_passes_test(is_gerente, login_url='/login/')
-def adicionar_requisicao_saldo(request):
+def adicionar_requisicao_saldo(request, cliente_id=None):
     """View para adicionar nova requisição de saldo"""
     if request.method == 'POST':
         try:
@@ -728,22 +856,27 @@ def adicionar_requisicao_saldo(request):
                 return redirect('login')
             
             # Obter dados do formulário com validação
-            cliente_id = request.POST.get('cliente')
+            cliente_id_form = request.POST.get('cliente')
             valor_total_str = request.POST.get('valor_total', '0')
             forma_pagamento = request.POST.get('forma_pagamento')
             banco = request.POST.get('banco', '').strip()
             
+            # Use cliente_id from URL if available, otherwise from form
+            final_cliente_id = cliente_id if cliente_id else cliente_id_form
+            
             # Validar campos obrigatórios
-            if not cliente_id:
+            if not final_cliente_id:
                 messages.error(request, 'Cliente é obrigatório.')
                 return render(request, 'gerente/adicionar_req_saldo.html', {
-                    'clientes': Cliente.objects.filter(empresa=empresa)
+                    'clientes': Cliente.objects.filter(empresa=empresa),
+                    'cliente_selecionado': cliente_id
                 })
             
             if not forma_pagamento:
                 messages.error(request, 'Forma de pagamento é obrigatória.')
                 return render(request, 'gerente/adicionar_req_saldo.html', {
-                    'clientes': Cliente.objects.filter(empresa=empresa)
+                    'clientes': Cliente.objects.filter(empresa=empresa),
+                    'cliente_selecionado': cliente_id
                 })
             
             # CORREÇÃO PRINCIPAL: Converter valor para Decimal/float corretamente
@@ -756,29 +889,33 @@ def adicionar_requisicao_saldo(request):
                 if valor_total <= 0:
                     messages.error(request, 'Valor total deve ser maior que zero.')
                     return render(request, 'gerente/adicionar_req_saldo.html', {
-                        'clientes': Cliente.objects.filter(empresa=empresa)
+                        'clientes': Cliente.objects.filter(empresa=empresa),
+                        'cliente_selecionado': cliente_id
                     })
                     
             except (ValueError, InvalidOperation, TypeError) as e:
                 messages.error(request, f'Valor total inválido: {valor_total_str}. Use apenas números.')
                 return render(request, 'gerente/adicionar_req_saldo.html', {
-                    'clientes': Cliente.objects.filter(empresa=empresa)
+                    'clientes': Cliente.objects.filter(empresa=empresa),
+                    'cliente_selecionado': cliente_id
                 })
             
             # Obter cliente
             try:
-                cliente = Cliente.objects.get(id=int(cliente_id), empresa=empresa)
+                cliente = Cliente.objects.get(id=int(final_cliente_id), empresa=empresa)
             except (Cliente.DoesNotExist, ValueError):
                 messages.error(request, 'Cliente não encontrado.')
                 return render(request, 'gerente/adicionar_req_saldo.html', {
-                    'clientes': Cliente.objects.filter(empresa=empresa)
+                    'clientes': Cliente.objects.filter(empresa=empresa),
+                    'cliente_selecionado': cliente_id
                 })
             
             # Validar banco para transferência
             if forma_pagamento == 'transferencia' and not banco:
                 messages.error(request, 'Nome do banco é obrigatório para transferência bancária.')
                 return render(request, 'gerente/adicionar_req_saldo.html', {
-                    'clientes': Cliente.objects.filter(empresa=empresa)
+                    'clientes': Cliente.objects.filter(empresa=empresa),
+                    'cliente_selecionado': cliente_id
                 })
             
             # Criar a requisição de saldo
@@ -800,7 +937,8 @@ def adicionar_requisicao_saldo(request):
             return render(request, 'gerente/adicionar_req_saldo.html', {
                 'clientes': Cliente.objects.filter(empresa=empresa),
                 'mostrar_recibo': True,
-                'requisicao': requisicao
+                'requisicao': requisicao,
+                'cliente_selecionado': cliente_id
             })
             
         except Exception as e:
@@ -812,7 +950,8 @@ def adicionar_requisicao_saldo(request):
             
             messages.error(request, f'Erro ao criar requisição de saldo: {str(e)}')
             return render(request, 'gerente/adicionar_req_saldo.html', {
-                'clientes': Cliente.objects.filter(empresa=empresa)
+                'clientes': Cliente.objects.filter(empresa=empresa),
+                'cliente_selecionado': cliente_id
             })
     
     else:
@@ -824,8 +963,18 @@ def adicionar_requisicao_saldo(request):
             
         clientes = Cliente.objects.filter(empresa=empresa).order_by('nome')
         
+        # If cliente_id is provided in URL, get the cliente object
+        cliente_selecionado = None
+        if cliente_id:
+            try:
+                cliente_selecionado = Cliente.objects.get(id=cliente_id, empresa=empresa)
+            except Cliente.DoesNotExist:
+                messages.error(request, 'Cliente não encontrado.')
+                return redirect('clientes')
+        
         return render(request, 'gerente/adicionar_req_saldo.html', {
-            'clientes': clientes
+            'clientes': clientes,
+            'cliente_selecionado': cliente_selecionado
         })
 
 
