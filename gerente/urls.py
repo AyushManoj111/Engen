@@ -36,4 +36,10 @@ urlpatterns = [
 
     path('requisicao/<int:requisicao_id>/recibo-pdf/', views.gerar_recibo_pdf, name='gerar_recibo_pdf'),
     path('requisicao-saldo/<int:requisicao_id>/recibo-pdf/', views.gerar_recibo_saldo_pdf, name='gerar_recibo_saldo_pdf'),
+
+    path('fecho/', views.fecho, name='fecho'),
+    path('fazer-fecho/', views.fazer_fecho, name='fazer_fecho'),
+    path('fecho/preview/', views.preview_fecho, name='preview_fecho'),
+
+    path('requisicoes/ajax/pode-editar/<int:requisicao_id>/', views.ajax_pode_editar_requisicao, name='ajax_pode_editar_requisicao'),
 ]

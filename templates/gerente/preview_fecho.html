@@ -1,0 +1,643 @@
+{% extends 'gerente/base.html' %}
+
+{% block title %}Preview do Fecho - ENGEN{% endblock %}
+
+{% block extra_css %}
+<style>
+    .preview-card {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .preview-header {
+        background: linear-gradient(135deg, #ff6b35, #f7931e);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .preview-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .stat-preview {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 4px solid #007bff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s ease;
+    }
+
+    .stat-preview:hover {
+        transform: translateY(-2px);
+    }
+
+    .stat-preview h4 {
+        margin: 0 0 10px 0;
+        color: #495057;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-preview .number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #007bff;
+        margin-bottom: 5px;
+        line-height: 1;
+    }
+
+    .stat-preview .label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .stat-preview.receitas {
+        border-left-color: #28a745;
+    }
+
+    .stat-preview.receitas .number {
+        color: #28a745;
+    }
+
+    .stat-preview.despesas {
+        border-left-color: #dc3545;
+    }
+
+    .stat-preview.despesas .number {
+        color: #dc3545;
+    }
+
+    .stat-preview.saldo {
+        border-left-color: #17a2b8;
+    }
+
+    .stat-preview.saldo .number {
+        color: #17a2b8;
+    }
+
+    .warning-box {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-left: 4px solid #f39c12;
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.8; }
+        100% { opacity: 1; }
+    }
+
+    .warning-box h5 {
+        color: #856404;
+        margin: 0 0 10px 0;
+        font-weight: bold;
+    }
+
+    .info-box {
+        background: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-left: 4px solid #17a2b8;
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+    }
+
+    .preview-table {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+
+    .preview-table h5 {
+        background: #007bff;
+        color: white;
+        padding: 15px 20px;
+        margin: 0;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .preview-table.receitas h5 {
+        background: #28a745;
+    }
+
+    .preview-table.despesas h5 {
+        background: #dc3545;
+    }
+
+    .preview-table td, .preview-table th {
+        padding: 12px 20px;
+        border-bottom: 1px solid #e9ecef;
+        text-align: left;
+        vertical-align: middle;
+    }
+
+    .preview-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .preview-table tr:hover {
+        background: #f8f9fa;
+    }
+
+    .preview-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .summary-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-left: 4px solid #17a2b8;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .summary-item {
+        text-align: center;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 6px;
+    }
+
+    .summary-item .value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .summary-item.entradas .value {
+        color: #28a745;
+    }
+
+    .summary-item.saidas .value {
+        color: #dc3545;
+    }
+
+    .summary-item.saldo .value {
+        color: #17a2b8;
+    }
+
+    .action-buttons {
+        text-align: center;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-top: 30px;
+        border: 2px dashed #dee2e6;
+    }
+
+    .btn-confirmar {
+        background: linear-gradient(135deg, #28a745, #20a439);
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+        margin: 0 10px;
+        display: inline-block;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .btn-confirmar:hover {
+        background: linear-gradient(135deg, #20a439, #1e7e34);
+        transform: translateY(-2px);
+        color: white;
+        text-decoration: none;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .btn-cancelar {
+        background: #6c757d;
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+        margin: 0 10px;
+        display: inline-block;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .btn-cancelar:hover {
+        background: #5a6268;
+        color: white;
+        text-decoration: none;
+        transform: translateY(-1px);
+    }
+
+    .empty-message {
+        text-align: center;
+        padding: 40px;
+        color: #6c757d;
+    }
+
+    .loading-spinner {
+        display: none;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #007bff;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive improvements */
+    @media (max-width: 768px) {
+        .preview-stats {
+            grid-template-columns: 1fr;
+        }
+        
+        .stat-preview .number {
+            font-size: 1.5rem;
+        }
+        
+        .preview-table {
+            overflow-x: auto;
+        }
+        
+        .action-buttons {
+            padding: 15px;
+        }
+        
+        .btn-confirmar, .btn-cancelar {
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+        }
+    }
+
+    /* Print styles */
+    @media print {
+        .action-buttons,
+        .warning-box {
+            display: none;
+        }
+        
+        .preview-header {
+            background: #333 !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h2>Preview do Fecho</h2>
+    <small class="text-muted">Revisão dos dados antes do fechamento</small>
+</div>
+
+{% if total_registros > 0 %}
+<div class="preview-header">
+    <h3>🔒 Dados que serão fechados</h3>
+    <p>{{ total_registros|default:0 }} registro{{ total_registros|pluralize }} serão incluídos no próximo fecho</p>
+    <small>Data atual: {% now "d/m/Y H:i" %}</small>
+</div>
+
+<div class="warning-box">
+    <h5>⚠️ ATENÇÃO - AÇÃO IRREVERSÍVEL</h5>
+    <p>Após confirmar o fecho, os dados listados abaixo <strong>NÃO PODERÃO</strong> mais ser editados ou excluídos. Esta ação é <strong>PERMANENTE E IRREVERSÍVEL</strong>!</p>
+    <small>Certifique-se de que todos os dados estão corretos antes de prosseguir.</small>
+</div>
+
+<!-- Resumo Financeiro -->
+<div class="summary-card">
+    <h5 style="margin-bottom: 20px; color: #495057;">📊 Resumo Financeiro</h5>
+    <div class="summary-grid">
+        <div class="summary-item entradas">
+            <div class="value">{{ total_entradas|floatformat:2 }} MT</div>
+            <div class="label">Total Entradas</div>
+        </div>
+        <div class="summary-item saidas">
+            <div class="value">{{ total_saidas|floatformat:2 }} MT</div>
+            <div class="label">Total Saídas</div>
+        </div>
+        <div class="summary-item saldo">
+            <div class="value">{{ total_entradas|sub:total_saidas|floatformat:2 }} MT</div>
+            <div class="label">Saldo Líquido</div>
+        </div>
+    </div>
+</div>
+
+<div class="preview-stats">
+    <div class="stat-preview receitas">
+        <h4>Requisições de Senhas</h4>
+        <div class="number">{{ count_req_senhas }}</div>
+        <div class="label">{{ total_valor_senhas|floatformat:2 }} MT</div>
+    </div>
+    
+    <div class="stat-preview receitas">
+        <h4>Requisições de Saldo</h4>
+        <div class="number">{{ count_req_saldo }}</div>
+        <div class="label">{{ total_valor_saldo|floatformat:2 }} MT</div>
+    </div>
+    
+    <div class="stat-preview despesas">
+        <h4>Movimentos (Débitos)</h4>
+        <div class="number">{{ count_movimentos }}</div>
+        <div class="label">{{ total_debitos_saldo|floatformat:2 }} MT</div>
+    </div>
+    
+    <div class="stat-preview">
+        <h4>Senhas Usadas</h4>
+        <div class="number">{{ count_senhas_usadas }}</div>
+        <div class="label">Consumidas</div>
+    </div>
+</div>
+
+<!-- Requisições de Senhas (RECEITAS) -->
+{% if requisicoes_senhas_abertas %}
+<div class="preview-table receitas">
+    <h5>📋 Requisições de Senhas ({{ count_req_senhas }})</h5>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Cliente</th>
+                <th>Valor</th>
+                <th>Senhas</th>
+                <th>Restantes</th>
+                <th>Data</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for req in requisicoes_senhas_abertas %}
+            <tr>
+                <td>#{{ req.id }}</td>
+                <td>{{ req.cliente.nome|default:"N/A" }}</td>
+                <td>{{ req.valor|floatformat:2 }} MT</td>
+                <td>{{ req.senhas|default:"-" }}</td>
+                <td>{{ req.senhas_restantes|default:"-" }}</td>
+                <td>{{ req.data_criacao|date:"d/m/Y" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- Requisições de Saldo (RECEITAS) -->
+{% if requisicoes_saldo_abertas %}
+<div class="preview-table receitas">
+    <h5>💰 Requisições de Saldo ({{ count_req_saldo }})</h5>
+    <table>
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Cliente</th>
+                <th>Valor Total</th>
+                <th>Saldo Restante</th>
+                <th>Data</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for req in requisicoes_saldo_abertas %}
+            <tr>
+                <td>{{ req.codigo|default:"-" }}</td>
+                <td>{{ req.cliente.nome|default:"N/A" }}</td>
+                <td>{{ req.valor_total|floatformat:2 }} MT</td>
+                <td>{{ req.saldo_restante|floatformat:2 }} MT</td>
+                <td>{{ req.data_criacao|date:"d/m/Y" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- Movimentos (DÉBITOS) -->
+{% if movimentos_abertos %}
+<div class="preview-table despesas">
+    <h5>🔄 Movimentos - Débitos ({{ count_movimentos }})</h5>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Cliente</th>
+                <th>Descrição</th>
+                <th>Valor</th>
+                <th>Funcionário</th>
+                <th>Data</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mov in movimentos_abertos %}
+            <tr>
+                <td>#{{ mov.id }}</td>
+                <td>{{ mov.requisicao_saldo.cliente.nome|default:"N/A" }}</td>
+                <td>{{ mov.descricao|default:"Movimento"|truncatechars:50 }}</td>
+                <td>{{ mov.valor|floatformat:2 }} MT</td>
+                <td>{{ mov.funcionario.nome|default:"N/A" }}</td>
+                <td>{{ mov.data_criacao|date:"d/m/Y H:i" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- Senhas Usadas -->
+{% if senhas_usadas_abertas %}
+<div class="preview-table despesas">
+    <h5>🔐 Senhas Usadas ({{ count_senhas_usadas }})</h5>
+    <table>
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Cliente</th>
+                <th>Requisição</th>
+                <th>Data Uso</th>
+                <th>Funcionário</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for senha in senhas_usadas_abertas %}
+            <tr>
+                <td>{{ senha.codigo }}</td>
+                <td>{{ senha.requisicao.cliente.nome|default:"N/A" }}</td>
+                <td>#{{ senha.requisicao.id }}</td>
+                <td>{{ senha.data_uso|date:"d/m/Y H:i"|default:"N/A" }}</td>
+                <td>{{ senha.funcionario_uso.nome|default:"N/A" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div class="info-box">
+    <h5>ℹ️ Informação Importante</h5>
+    <p>Após o fecho, você ainda poderá <strong>visualizar</strong> todos estes dados nos relatórios, mas não poderá mais <strong>modificá-los</strong>. 
+    Apenas novos registros criados após este fecho poderão ser editados até o próximo fecho.</p>
+    <small><strong>Dica:</strong> Recomendamos fazer um backup dos dados antes de prosseguir.</small>
+</div>
+
+<div class="loading-spinner" id="loadingSpinner">
+    <div class="spinner"></div>
+    <p>Processando fecho, aguarde...</p>
+</div>
+
+<div class="action-buttons">
+    <a href="{% url 'fazer_fecho' %}" class="btn-confirmar" id="btnConfirmar">
+        🔒 Confirmar Fecho
+    </a>
+    <a href="{% url 'fecho' %}" class="btn-cancelar">
+        ❌ Cancelar
+    </a>
+</div>
+
+{% else %}
+<div class="empty-message">
+    <div class="preview-card">
+        <h4>✅ Não há dados pendentes para fecho</h4>
+        <p>Todos os dados já foram fechados ou não existem registros para processar.</p>
+        <br>
+        <a href="{% url 'fecho' %}" class="btn-cancelar">← Voltar ao Fecho</a>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Pass Django variables to JavaScript safely
+    const totalRegistros = parseInt('{{ total_registros|default:0 }}') || 0;
+    
+    const btnConfirmar = document.getElementById('btnConfirmar');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    
+    if (btnConfirmar) {
+        btnConfirmar.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            let confirmMessage = `Você está prestes a fechar ${totalRegistros} registro(s)!\n\n`;
+            confirmMessage += `Esta ação é IRREVERSÍVEL e impedirá futuras edições.\n\n`;
+            confirmMessage += `Tem certeza que deseja continuar?`;
+            
+            const primeiraConfirmacao = confirm(confirmMessage);
+            
+            if (primeiraConfirmacao) {
+                let segundaMessage = 'CONFIRMAÇÃO FINAL:\n\n';
+                segundaMessage += 'Esta é sua última chance de cancelar.\n';
+                segundaMessage += 'Clique OK para realizar o fecho definitivamente.';
+                
+                const segundaConfirmacao = confirm(segundaMessage);
+                
+                if (segundaConfirmacao) {
+                    // Mostrar loading
+                    if (loadingSpinner) {
+                        loadingSpinner.style.display = 'block';
+                    }
+                    btnConfirmar.style.display = 'none';
+                    
+                    // Desabilitar botão cancelar
+                    const btnCancelar = document.querySelector('.btn-cancelar');
+                    if (btnCancelar) {
+                        btnCancelar.style.opacity = '0.5';
+                        btnCancelar.style.pointerEvents = 'none';
+                    }
+                    
+                    // Redirecionar após pequeno delay para mostrar loading
+                    setTimeout(() => {
+                        window.location.href = this.href;
+                    }, 500);
+                }
+            }
+        });
+    }
+    
+    // Prevenir múltiplos cliques
+    let isProcessing = false;
+    if (btnConfirmar) {
+        const handleClick = function(e) {
+            if (isProcessing) {
+                e.preventDefault();
+                return false;
+            }
+            isProcessing = true;
+            setTimeout(() => { isProcessing = false; }, 3000);
+        };
+        
+        btnConfirmar.addEventListener('click', handleClick);
+    }
+    
+    // Aviso antes de sair da página
+    let shouldWarn = true;
+    window.addEventListener('beforeunload', function(e) {
+        if (shouldWarn && totalRegistros > 0) {
+            const message = 'Você tem dados pendentes para fecho. Tem certeza que deseja sair?';
+            e.preventDefault();
+            e.returnValue = message;
+            return message;
+        }
+    });
+    
+    // Desabilitar aviso quando clicando nos botões
+    document.querySelectorAll('.btn-confirmar, .btn-cancelar').forEach(btn => {
+        btn.addEventListener('click', () => {
+            shouldWarn = false;
+        });
+    });
+    
+    // Adicionar botão de impressão se necessário
+    if (totalRegistros > 0) {
+        const actionButtons = document.querySelector('.action-buttons');
+        if (actionButtons) {
+            const printBtn = document.createElement('button');
+            printBtn.className = 'btn-cancelar';
+            printBtn.innerHTML = '🖨️ Imprimir Preview';
+            printBtn.onclick = function() { window.print(); };
+            printBtn.style.marginLeft = '10px';
+            actionButtons.appendChild(printBtn);
+        }
+    }
+});
+</script>
+{% endblock %}

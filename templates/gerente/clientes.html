@@ -41,7 +41,7 @@
                     <th>Nome</th>
                     <th>Contacto</th>
                     <th>Endereço</th>
-                    <th>Requisições</th>
+                    <th>Requisições Totais</th>
                     <th>Data Criação</th>
                     <th>Ações</th>
                 </tr>
@@ -53,7 +53,7 @@
                     <td>{{ cliente.contacto|default:"N/A" }}</td>
                     <td>{{ cliente.endereco|default:"N/A" }}</td>
                     <td>
-                        <span class="requisicoes-badge">{{ cliente.requisicoes.count }}</span>
+                        <span class="requisicoes-badge">{{ cliente.total_requisicoes }}</span>
                     </td>
                     <td>{{ cliente.data_criacao|date:"d/m/Y" }}</td>
                     <td class="actions-cell">
@@ -62,7 +62,6 @@
                         <a href="{% url 'deletar_cliente' cliente.id %}" class="btn-action btn-delete"
                             onclick="return confirm('Tem certeza que deseja excluir {{ cliente.nome }}?')">Excluir</a>
                     </td>
-
                 </tr>
                 {% endfor %}
             </tbody>

@@ -18,7 +18,7 @@
                         </a>
                     </div>
                 </div>
-                
+
                 <div class="extrato-content" id="extratoContent">
                     <!-- Cabeçalho para impressão -->
                     <div class="extrato-header print-only">
@@ -33,96 +33,133 @@
                         </div>
                     </div>
 
-                    {% if tem_movimentacao %}
-                        <!-- Tabela do Extrato -->
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Data</th>
-                                        <th>Descrição</th>
-                                        <th>Forma Pagamento</th>
-                                        <th>Nº Requisição</th>
-                                        <th>Crédito</th>
-                                        <th>Débito</th>
-                                        <th>Combustível</th>
-                                        <th>Saldo</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for item in extrato %}
-                                    <tr>
-                                        <td>{{ item.data|date:"d/m/Y H:i" }}</td>
-                                        <td>{{ item.descricao }}</td>
-                                        <td>{{ item.forma_pagamento }}</td>
-                                        <td>{{ item.numero_requisicoes }}</td>
-                                        <td>
-                                            {% if item.credito %}
-                                                <span class="text-success">+ {{ item.credito|floatformat:2 }} MT</span>
-                                            {% else %}
-                                                <span class="text-muted">-</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if item.debito %}
-                                                <span class="text-danger">- {{ item.debito|floatformat:2 }} MT</span>
-                                            {% else %}
-                                                <span class="text-muted">-</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if item.tipo_combustivel %}
-                                                <span class="text-warning">{{ item.tipo_combustivel }}</span>
-                                            {% else %}
-                                                <span class="text-muted">-</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <strong class="{% if item.saldo >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                                {{ item.saldo|floatformat:2 }} MT
-                                            </strong>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
+                    {% if total_pendentes > 0 %}
+                    <div class="alert alert-warning"
+                        style="background: #fff3cd; border: 1px solid #ffecb5; border-radius: 5px; padding: 15px; margin: 20px 0; border-left: 4px solid #f0ad4e;">
+                        <h4 style="color: #8a6d3b; margin: 0 0 10px 0; font-size: 16px;">
+                            <i class="fas fa-exclamation-triangle"></i> Dados Pendentes de Fecho
+                        </h4>
+                        <p style="color: #8a6d3b; margin: 0 0 10px 0; font-size: 14px;">
+                            Existem <strong>{{ total_pendentes }}</strong> registros que ainda não foram fechados e não
+                            aparecem neste extrato:
+                        </p>
+                        <ul style="margin: 0; padding-left: 20px; color: #8a6d3b;">
+                            {% if dados_pendentes.requisicoes_senhas > 0 %}
+                            <li>{{ dados_pendentes.requisicoes_senhas }} requisição(ões) de senhas</li>
+                            {% endif %}
+                            {% if dados_pendentes.requisicoes_saldo > 0 %}
+                            <li>{{ dados_pendentes.requisicoes_saldo }} requisição(ões) de saldo</li>
+                            {% endif %}
+                            {% if dados_pendentes.senhas_usadas > 0 %}
+                            <li>{{ dados_pendentes.senhas_usadas }} senha(s) usada(s)</li>
+                            {% endif %}
+                            {% if dados_pendentes.movimentos > 0 %}
+                            <li>{{ dados_pendentes.movimentos }} movimento(s)</li>
+                            {% endif %}
+                        </ul>
+                        <p style="color: #8a6d3b; margin: 10px 0 0 0; font-size: 13px; font-style: italic;">
+                            Para incluir estes dados no extrato, é necessário realizar um <a href="{% url 'fecho' %}"
+                                style="color: #d58512; font-weight: bold;">fecho</a> primeiro.
+                        </p>
+                    </div>
+                    {% endif %}
 
-                        <!-- Totalizadores -->
-                        <div class="row mt-4">
-                            <div class="col-12">
-                                <div class="alert alert-info">
-                                    <div class="row text-center">
-                                        <div class="col-md-4">
-                                            <h6><i class="fas fa-arrow-up text-success"></i> Total Entradas</h6>
-                                            <h5 class="text-success">{{ total_creditos|floatformat:2 }} MT</h5>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <h6><i class="fas fa-arrow-down text-danger"></i> Total Saídas</h6>
-                                            <h5 class="text-danger">{{ total_debitos|floatformat:2 }} MT</h5>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <h6><i class="fas fa-wallet text-primary"></i> Saldo Final</h6>
-                                            <h5 class="{% if saldo_atual >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                                {{ saldo_atual|floatformat:2 }} MT
-                                            </h5>
-                                        </div>
+                    {% if tem_movimentacao %}
+                    <!-- Tabela do Extrato -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Descrição</th>
+                                    <th>Forma Pagamento</th>
+                                    <th>Nº Requisição</th>
+                                    <th>Crédito</th>
+                                    <th>Débito</th>
+                                    <th>Senha Usada</th>
+                                    <th>Combustível</th>
+                                    <th>Saldo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in extrato %}
+                                <tr>
+                                    <td>{{ item.data|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ item.descricao }}</td>
+                                    <td>{{ item.forma_pagamento }}</td>
+                                    <td>{{ item.numero_requisicoes }}</td>
+                                    <td>
+                                        {% if item.credito %}
+                                        <span class="text-success">+ {{ item.credito|floatformat:2 }} MT</span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.debito %}
+                                        <span class="text-danger">- {{ item.debito|floatformat:2 }} MT</span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.senha_usada %}
+                                        <span class="text-warning">
+                                            <i class="fas fa-key"></i> {{ item.senha_usada }}
+                                        </span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.tipo_combustivel %}
+                                        <span class="text-warning">{{ item.tipo_combustivel }}</span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong
+                                            class="{% if item.saldo >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                            {{ item.saldo|floatformat:2 }} MT
+                                        </strong>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Totalizadores -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <div class="row text-center">
+                                    <div class="col-md-4">
+                                        <h6><i class="fas fa-arrow-up text-success"></i> Total Entradas</h6>
+                                        <h5 class="text-success">{{ total_creditos|floatformat:2 }} MT</h5>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6><i class="fas fa-arrow-down text-danger"></i> Total Saídas</h6>
+                                        <h5 class="text-danger">{{ total_debitos|floatformat:2 }} MT</h5>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6><i class="fas fa-wallet text-primary"></i> Saldo Final</h6>
+                                        <h5
+                                            class="{% if saldo_atual >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                            {{ saldo_atual|floatformat:2 }} MT
+                                        </h5>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
                     {% else %}
-                        <!-- Sem Movimentação -->
-                        <div class="text-center py-5">
-                            <i class="fas fa-file-invoice fa-4x text-muted mb-3"></i>
-                            <h4 class="text-muted">Nenhuma movimentação encontrada</h4>
-                            <p class="text-muted">Este cliente ainda não possui créditos, débitos ou requisições de senhas.</p>
-                            <div class="no-print">
-                                <a href="{% url 'adicionar_req_saldo' cliente.id %}" class="btn btn-primary">
-                                    <i class="fas fa-plus"></i> Nova Requisição de Saldo
-                                </a>
-                            </div>
-                        </div>
+                    <!-- Sem Movimentação -->
+                    <div class="text-center py-5">
+                        <i class="fas fa-file-invoice fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">Nenhuma movimentação encontrada</h4>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -173,46 +210,56 @@
         font-size: 0.9rem;
     }
 
+    .badge {
+        font-size: 0.8rem;
+    }
+
     @media print {
         .no-print {
             display: none !important;
         }
-        
+
         .print-only {
             display: block !important;
         }
-        
+
         .card {
             box-shadow: none !important;
             border: none !important;
         }
-        
+
         .table th {
             background-color: #f8f9fa !important;
             color: #000 !important;
             print-color-adjust: exact;
             -webkit-print-color-adjust: exact;
         }
-        
+
         .text-success {
             color: #28a745 !important;
         }
-        
+
         .text-danger {
             color: #dc3545 !important;
         }
-        
+
         .text-warning {
             color: #ffc107 !important;
         }
-        
+
         .alert-info {
             background-color: #e7f3ff !important;
             border-color: #b8daff !important;
             print-color-adjust: exact;
             -webkit-print-color-adjust: exact;
         }
-        
+
+        .badge {
+            border: 1px solid #6c757d !important;
+            color: #000 !important;
+            background: #e9ecef !important;
+        }
+
         @page {
             margin: 20mm;
             size: A4;
@@ -224,7 +271,7 @@
     function imprimirExtrato() {
         const printWindow = window.open('', '_blank');
         const extratoContent = document.getElementById('extratoContent').innerHTML;
-        
+
         printWindow.document.write(`
             <!DOCTYPE html>
             <html>
@@ -324,6 +371,12 @@
                         color: #055160 !important;
                     }
                     
+                    .badge {
+                        border: 1px solid #6c757d !important;
+                        color: #000 !important;
+                        background: #e9ecef !important;
+                    }
+                    
                     @media print {
                         body { 
                             margin: 0; 
@@ -353,12 +406,12 @@
             </body>
             </html>
         `);
-        
+
         printWindow.document.close();
         printWindow.focus();
-        
+
         // Aguardar carregar e imprimir
-        printWindow.onload = function() {
+        printWindow.onload = function () {
             printWindow.print();
             printWindow.close();
         };

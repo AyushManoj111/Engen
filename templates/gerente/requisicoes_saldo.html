@@ -49,6 +49,41 @@
         color: #6c757d;
     }
 
+    /* Estilos para Fecho */
+    .fecho-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .fecho-fechado {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .fecho-aberto {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+
+    /* Linha desabilitada para itens fechados */
+    .row-fechado {
+        opacity: 0.7;
+        background-color: #f8f9fa !important;
+    }
+
+    /* Botões desabilitados */
+    .btn-disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
     /* Responsividade */
     @media (max-width: 768px) {
         .stats-grid {
@@ -82,6 +117,11 @@
                 <option value="medio">Saldo Médio</option>
                 <option value="alto">Saldo Alto</option>
             </select>
+            <select class="filter-select" id="fechoFilter" onchange="filterByFecho()">
+                <option value="">Todos os Fechos</option>
+                <option value="fechado">Fechadas</option>
+                <option value="aberto">Abertas</option>
+            </select>
         </div>
     </div>
     <div class="table-wrapper">
@@ -93,6 +133,7 @@
                     <th>Cliente</th>
                     <th>Valor Total</th>
                     <th>Saldo Restante</th>
+                    <th>Fecho</th>
                     <th>Data Criação</th>
                     <th>Ações</th>
                 </tr>
@@ -100,7 +141,9 @@
             <tbody>
                 {% for requisicao in requisicoes %}
                 <tr
-                    data-status="{% if requisicao.saldo_restante == 0 %}esgotado{% elif requisicao.saldo_restante <= 50 %}baixo{% elif requisicao.saldo_restante <= 200 %}medio{% else %}alto{% endif %}">
+                    class="{% if requisicao.fecho %}row-fechado{% endif %}"
+                    data-status="{% if requisicao.saldo_restante == 0 %}esgotado{% elif requisicao.saldo_restante <= 50 %}baixo{% elif requisicao.saldo_restante <= 200 %}medio{% else %}alto{% endif %}"
+                    data-fecho="{% if requisicao.fecho %}fechado{% else %}aberto{% endif %}">
                     <td>
                         <code>{{ requisicao.codigo }}</code>
                     </td>
@@ -112,11 +155,29 @@
                             {{ requisicao.saldo_restante }} MT
                         </span>
                     </td>
+                    <td>
+                        {% if requisicao.fecho %}
+                            <span class="fecho-badge fecho-fechado" title="Fechado em {{ requisicao.fecho.data|date:'d/m/Y H:i' }}">
+                                Fecho #{{ requisicao.fecho.id }}
+                            </span>
+                        {% else %}
+                            <span class="fecho-badge fecho-aberto">
+                                Aberto
+                            </span>
+                        {% endif %}
+                    </td>
                     <td>{{ requisicao.data_criacao|date:"d/m/Y" }}</td>
                     <td class="actions-cell">
-                        <a href="{% url 'editar_requisicao_saldo' requisicao.id %}" class="btn-action btn-edit">Editar</a>
-                        <a href="{% url 'deletar_requisicao_saldo' requisicao.id %}" class="btn-action btn-delete"
-                            onclick="return confirm('Tem certeza que deseja excluir esta requisição de saldo?')">Excluir</a>
+                        {% if requisicao.fecho %}
+                            <!-- Requisições fechadas - sem ações de edição/exclusão -->
+                            <span class="btn-action btn-disabled" title="Não é possível editar requisições fechadas">Editar</span>
+                            <span class="btn-action btn-disabled" title="Não é possível excluir requisições fechadas">Excluir</span>
+                        {% else %}
+                            <!-- Requisições abertas - todas as ações disponíveis -->
+                            <a href="{% url 'editar_requisicao_saldo' requisicao.id %}" class="btn-action btn-edit">Editar</a>
+                            <a href="{% url 'deletar_requisicao_saldo' requisicao.id %}" class="btn-action btn-delete"
+                                onclick="return confirm('Tem certeza que deseja excluir esta requisição de saldo?')">Excluir</a>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -162,7 +223,28 @@
         const rows = document.querySelectorAll('tbody tr[data-status]');
 
         rows.forEach(row => {
-            if (filter === '' || row.getAttribute('data-status') === filter) {
+            const statusMatch = filter === '' || row.getAttribute('data-status') === filter;
+            const fechoFilter = document.getElementById('fechoFilter').value;
+            const fechoMatch = fechoFilter === '' || row.getAttribute('data-fecho') === fechoFilter;
+            
+            if (statusMatch && fechoMatch) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function filterByFecho() {
+        const filter = document.getElementById('fechoFilter').value;
+        const rows = document.querySelectorAll('tbody tr[data-fecho]');
+
+        rows.forEach(row => {
+            const fechoMatch = filter === '' || row.getAttribute('data-fecho') === filter;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const statusMatch = statusFilter === '' || row.getAttribute('data-status') === statusFilter;
+            
+            if (fechoMatch && statusMatch) {
                 row.style.display = '';
             } else {
                 row.style.display = 'none';

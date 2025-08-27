@@ -8,32 +8,37 @@
         <ul class="nav-list">
             <li class="nav-item">
                 <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                    📊 Dashboard
+                    Dashboard
                 </a>
             </li>
             <li class="nav-item">
                 <a href="{% url 'funcionarios' %}" class="nav-link {% if request.resolver_match.url_name == 'funcionarios' %}active{% endif %}">
-                    👨‍💼 Funcionários
+                    Funcionários
                 </a>
             </li>
             <li class="nav-item">
                 <a href="{% url 'clientes' %}" class="nav-link {% if request.resolver_match.url_name == 'clientes' %}active{% endif %}">
-                    👥 Clientes
+                    Clientes
                 </a>
             </li>
             <li class="nav-item">
                 <a href="{% url 'requisicoes' %}" class="nav-link {% if request.resolver_match.url_name == 'requisicoes' %}active{% endif %}">
-                    📑 Requisições-Senha
+                    Requisições-Senha
                 </a>
             </li>
             <li class="nav-item">
                 <a href="{% url 'requisicoes_saldo' %}" class="nav-link {% if request.resolver_match.url_name == 'requisicoes_saldo' %}active{% endif %}">
-                    📑 Requisições-Saldo
+                    Requisições-Saldo
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'fecho' %}" class="nav-link {% if request.resolver_match.url_name == 'fechos' %}active{% endif %}">
+                    Fecho
                 </a>
             </li>
             <li class="nav-item nav-divider">
                 <a href="{% url 'logout' %}" class="nav-link nav-logout">
-                    🚪 Sair
+                    Sair
                 </a>
             </li>
         </ul>
@@ -62,7 +67,7 @@
 
     .empresa-name {
         color: #60a5fa;
-        font-size: 16px;
+        font-size: 18px;
         font-weight: 700;
         letter-spacing: 0.5px;
         margin-bottom: 6px;
@@ -71,7 +76,7 @@
 
     .user-info {
         color: #9ca3af;
-        font-size: 13px;
+        font-size: 15px;
         font-weight: 500;
         opacity: 0.8;
     }
@@ -99,10 +104,10 @@
 
     .nav-link {
         display: block;
-        padding: 14px 20px;
+        padding: 16px 22px;
         color: #9ca3af;
         text-decoration: none;
-        font-size: 14px;
+        font-size: 16px;
         font-weight: 500;
         border-left: 3px solid transparent;
         position: relative;
@@ -175,7 +180,8 @@
         }
         
         .nav-link {
-            padding: 12px 18px;
+            padding: 14px 20px;
+            font-size: 15px;
         }
         
         .user-section {
@@ -183,7 +189,11 @@
         }
         
         .empresa-name {
-            font-size: 15px;
+            font-size: 17px;
+        }
+        
+        .user-info {
+            font-size: 14px;
         }
     }
 </style>

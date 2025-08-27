@@ -1,13 +1,18 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="pt">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard - {{ funcionario.nome|default:"Funcionário" }}</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: system-ui, sans-serif;
             background: #f8fafc;
@@ -29,17 +34,25 @@
             gap: 1rem;
         }
 
-        .header h1 { font-size: 1.25rem; font-weight: 600; }
-        
-        .company-info { 
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .company-info {
             font-size: 0.875rem;
             text-align: center;
         }
-        
-        .company-info .company-name { font-weight: 600; }
-        
-        .logout-section { display: flex; justify-content: flex-end; }
-        
+
+        .company-info .company-name {
+            font-weight: 600;
+        }
+
+        .logout-section {
+            display: flex;
+            justify-content: flex-end;
+        }
+
         .logout-link {
             color: rgba(255, 255, 255, 0.8);
             text-decoration: none;
@@ -48,8 +61,11 @@
             border-radius: 4px;
             transition: all 0.2s;
         }
-        
-        .logout-link:hover { color: white; background: rgba(255, 255, 255, 0.1); }
+
+        .logout-link:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
 
         .container {
             max-width: 1200px;
@@ -57,8 +73,10 @@
             padding: 1.5rem;
         }
 
-        .messages { margin-bottom: 1.5rem; }
-        
+        .messages {
+            margin-bottom: 1.5rem;
+        }
+
         .messages li {
             list-style: none;
             padding: 1rem;
@@ -67,8 +85,17 @@
             font-weight: 500;
         }
 
-        .success { background: #dcfce7; color: #166534; border-left: 4px solid #22c55e; }
-        .error { background: #fef2f2; color: #991b1b; border-left: 4px solid #ef4444; }
+        .success {
+            background: #dcfce7;
+            color: #166534;
+            border-left: 4px solid #22c55e;
+        }
+
+        .error {
+            background: #fef2f2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
 
         .scan-section {
             background: white;
@@ -83,9 +110,14 @@
             border-bottom: 1px solid #e2e8f0;
         }
 
-        .section-header h2 { font-size: 1.25rem; font-weight: 600; }
+        .section-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
 
-        .scan-form { padding: 1.5rem; }
+        .scan-form {
+            padding: 1.5rem;
+        }
 
         .form-row {
             display: grid;
@@ -94,7 +126,10 @@
             align-items: end;
         }
 
-        .form-group { display: flex; flex-direction: column; }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
 
         .form-group label {
             font-size: 0.875rem;
@@ -169,8 +204,14 @@
             transition: all 0.2s;
         }
 
-        .scan-button:hover { background: #1e293b; }
-        .scan-button:disabled { opacity: 0.7; cursor: not-allowed; }
+        .scan-button:hover {
+            background: #1e293b;
+        }
+
+        .scan-button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
 
         .fuel-icons {
             display: flex;
@@ -184,31 +225,44 @@
             border-radius: 50%;
         }
 
-        .fuel-icon.gasolina { background: #ef4444; }
-        .fuel-icon.diesel { background: #22c55e; }
+        .fuel-icon.gasolina {
+            background: #ef4444;
+        }
+
+        .fuel-icon.diesel {
+            background: #22c55e;
+        }
 
         /* Mobile */
         @media (max-width: 768px) {
-            .header-content { 
+            .header-content {
                 grid-template-columns: 1fr;
                 text-align: center;
                 gap: 0.75rem;
             }
-            
-            .company-info { order: 2; }
-            .logout-section { order: 3; justify-content: center; }
-            
+
+            .company-info {
+                order: 2;
+            }
+
+            .logout-section {
+                order: 3;
+                justify-content: center;
+            }
+
             .form-row {
                 grid-template-columns: 1fr;
                 gap: 1rem;
             }
-            
+
             .fuel-options {
                 flex-direction: column;
                 gap: 0.5rem;
             }
-            
-            .container { padding: 1rem; }
+
+            .container {
+                padding: 1rem;
+            }
         }
 
         @media (max-width: 1024px) {
@@ -216,9 +270,9 @@
                 grid-template-columns: 1fr 1fr;
                 gap: 1rem;
             }
-            
-            .form-row > :nth-child(3),
-            .form-row > :nth-child(4) {
+
+            .form-row> :nth-child(3),
+            .form-row> :nth-child(4) {
                 grid-column: span 2;
             }
         }
@@ -260,26 +314,13 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="string">Código</label>
-                            <input 
-                                id="string" 
-                                name="string" 
-                                type="text" 
-                                placeholder="Digite ou escaneie o código"
-                                required 
-                                autocomplete="off"
-                                autofocus
-                            />
+                            <input id="string" name="string" type="text" placeholder="Digite ou escaneie o código"
+                                required autocomplete="off" autofocus />
                         </div>
                         <div class="form-group">
                             <label for="valor">Valor (MT)</label>
-                            <input 
-                                id="valor" 
-                                name="valor" 
-                                type="number" 
-                                step="0.01"
-                                min="0"
-                                placeholder="0.00 (para saldo)"
-                            />
+                            <input id="valor" name="valor" type="number" step="0.01" min="0"
+                                placeholder="0.00 (para saldo)" />
                         </div>
                         <div class="form-group">
                             <label>Tipo de Combustível</label>
@@ -310,13 +351,13 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const stringInput = document.getElementById('string');
             const valorInput = document.getElementById('valor');
             const form = document.querySelector('form');
             const fuelOptions = document.querySelectorAll('.fuel-option');
             const urlParams = new URLSearchParams(window.location.search);
-            
+
             // Limpar campos após sucesso
             if (urlParams.get('success') === '1') {
                 stringInput.value = '';
@@ -330,14 +371,14 @@
 
             // Gerenciar seleção visual dos combustíveis
             fuelOptions.forEach(option => {
-                option.addEventListener('click', function() {
+                option.addEventListener('click', function () {
                     const fuelType = this.dataset.fuel;
                     const radio = document.getElementById(fuelType);
-                    
+
                     // Desmarcar todos
                     fuelOptions.forEach(opt => opt.classList.remove('selected'));
                     document.querySelectorAll('input[name="tipo_combustivel"]').forEach(r => r.checked = false);
-                    
+
                     // Marcar o selecionado
                     this.classList.add('selected');
                     radio.checked = true;
@@ -347,24 +388,42 @@
             // Campo de combustível sempre visível - não precisa de lógica especial
 
             // Enter no código sem valor
-            stringInput.addEventListener('keypress', function(e) {
+            stringInput.addEventListener('keypress', function (e) {
                 if (e.key === 'Enter' && !valorInput.value) {
                     form.submit();
                 }
             });
 
-            // Validação do formulário
-            form.addEventListener('submit', function(e) {
+            // Validação do formulário - substituir a função existente
+            form.addEventListener('submit', function (e) {
+                const codigo = stringInput.value.trim();
                 const valor = valorInput.value;
                 const tipoCombustivel = document.querySelector('input[name="tipo_combustivel"]:checked');
-                
-                // Se tem valor mas não tem tipo de combustível, avisar
-                if (valor && parseFloat(valor) > 0 && !tipoCombustivel) {
+
+                // Verificar se código foi preenchido
+                if (!codigo) {
                     e.preventDefault();
-                    alert('Por favor, selecione o tipo de combustível para débitos de saldo.');
+                    alert('Por favor, digite ou escaneie um código.');
+                    stringInput.focus();
                     return;
                 }
-                
+
+                // NOVA VALIDAÇÃO: Combustível obrigatório para TODAS as operações
+                if (!tipoCombustivel) {
+                    e.preventDefault();
+                    alert('Por favor, selecione o tipo de combustível.');
+                    return;
+                }
+
+                // Validação adicional: se tem valor mas é zero ou negativo
+                if (valor && parseFloat(valor) <= 0) {
+                    e.preventDefault();
+                    alert('O valor deve ser maior que zero ou deixe em branco para consultar saldo.');
+                    valorInput.focus();
+                    return;
+                }
+
+                // Se chegou até aqui, tudo está válido
                 const button = document.querySelector('.scan-button');
                 button.textContent = 'Processando...';
                 button.disabled = true;
@@ -372,4 +431,5 @@
         });
     </script>
 </body>
+
 </html>
