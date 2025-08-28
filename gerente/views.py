@@ -1474,6 +1474,29 @@ def imprimir_qr_codes(request, requisicao_id):
     
     return render(request, 'gerente/qr_codes.html', context)
 
+@user_passes_test(is_gerente, login_url='/login/')
+def imprimir_qr_codes_saldo(request, requisicao_id):
+    """
+    Gera e exibe QR Codes para todas as transações de uma requisição de saldo
+    """
+    empresa = get_empresa_usuario(request.user)
+    if not empresa:
+        messages.error(request, 'Empresa não encontrada.')
+        return redirect('login')
+    
+    requisicao = get_object_or_404(RequisicaoSaldo, id=requisicao_id, empresa=empresa)
+    
+    # Gerar QR code apenas com o código da requisição
+    qr_code_base64 = gerar_qr_code(requisicao.codigo)
+    
+    context = {
+        'requisicao': requisicao,
+        'qr_code': qr_code_base64,
+        'data_geracao': timezone.now().strftime("%d/%m/%Y %H:%M")
+    }
+    
+    return render(request, 'gerente/qr_codes_saldo.html', context)
+
 def gerar_qr_code(texto):
     """
     Gera um QR Code em base64 para o texto fornecido

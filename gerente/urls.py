@@ -33,9 +33,9 @@ urlpatterns = [
     path('requisicoes-saldo/adicionar/<int:cliente_id>/', views.adicionar_requisicao_saldo, name='adicionar_req_saldo'),
     path('requisicoes-saldo/<int:requisicao_id>/editar/', views.editar_requisicao_saldo, name='editar_requisicao_saldo'),
     path('requisicoes-saldo/<int:requisicao_id>/deletar/', views.deletar_requisicao_saldo, name='deletar_requisicao_saldo'),
-
     path('requisicao/<int:requisicao_id>/recibo-pdf/', views.gerar_recibo_pdf, name='gerar_recibo_pdf'),
     path('requisicao-saldo/<int:requisicao_id>/recibo-pdf/', views.gerar_recibo_saldo_pdf, name='gerar_recibo_saldo_pdf'),
+    path('requisicoes-saldo/<int:requisicao_id>/qr-codes/', views.imprimir_qr_codes_saldo, name='imprimir_qr_codes_saldo'),
 
     path('fecho/', views.fecho, name='fecho'),
     path('fazer-fecho/', views.fazer_fecho, name='fazer_fecho'),

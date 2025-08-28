@@ -1,6 +1,7 @@
+<!-- templates/gerente/qr_codes_saldo.html -->
 {% extends 'gerente/base.html' %}
 
-{% block title %}QR Codes - Requisição #{{ requisicao.id }} - ENGEN{% endblock %}
+{% block title %}QR Codes - Requisição {{ requisicao.codigo }} - ENGEN{% endblock %}
 
 {% block content %}
 <style>
@@ -31,13 +32,9 @@
             page-break-inside: avoid;
         }
         
-        .qr-card {
+        .qr-item {
             break-inside: avoid;
             page-break-inside: avoid;
-        }
-        
-        .page-break {
-            page-break-after: always;
         }
     }
 
@@ -77,13 +74,12 @@
     }
 
     .qr-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 20px;
+        display: flex;
+        justify-content: center;
         margin-top: 20px;
     }
 
-    .qr-card {
+    .qr-item {
         border: 2px solid #333;
         padding: 20px;
         text-align: center;
@@ -92,42 +88,30 @@
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
-    .qr-card h3 {
-        margin: 0 0 10px 0;
-        font-size: 18px;
-        color: #333;
-        font-weight: bold;
-    }
-
-    .qr-code img {
+    .qr-item img {
         max-width: 200px;
         height: auto;
         margin: 10px 0;
-        padding: 10px;
-        background: white;
-        border: 1px solid #ddd;
-        border-radius: 5px;
     }
 
-    .senha-codigo {
+    .qr-item h3 {
+        margin: 0 0 10px 0;
+        font-size: 18px;
+        color: #333;
+    }
+
+    .qr-item .codigo {
         font-family: 'Courier New', monospace;
         font-size: 16px;
         font-weight: bold;
         color: #007bff;
-        background: #e9ecef;
-        padding: 8px 12px;
-        border-radius: 4px;
-        margin: 10px 0;
-        letter-spacing: 1px;
+        margin: 5px 0;
     }
 
-    .cliente-info {
-        background: #f8f9fa;
-        padding: 10px;
-        border-radius: 5px;
-        margin-top: 15px;
+    .qr-item .valor {
         font-size: 14px;
-        color: #555;
+        color: #666;
+        margin: 5px 0;
     }
 
     .info-requisicao {
@@ -167,23 +151,17 @@
     .info-value {
         color: #333;
     }
-
-    .empty-state {
-        text-align: center;
-        padding: 40px;
-        color: #666;
-    }
 </style>
 
 <div class="print-controls no-print">
     <button onclick="window.print()" class="btn-print">🖨️ Imprimir QR Codes</button>
-    <a href="{% url 'ver_senhas' requisicao.id %}" class="btn-print btn-back">← Voltar</a>
+    <a href="{% url 'requisicoes_saldo' %}" class="btn-print btn-back">← Voltar</a>
 </div>
 
 <div class="print-area">
     <div class="print-header">
-        <h1>QR Codes das Senhas</h1>
-        <p><strong>Requisição:</strong> #{{ requisicao.id }}</p>
+        <h1>QR Codes - Requisição de Saldo</h1>
+        <p><strong>Código:</strong> {{ requisicao.codigo }}</p>
         <p><strong>Data de Geração:</strong> {{ data_geracao }}</p>
     </div>
 
@@ -195,16 +173,12 @@
                 <span class="info-value">{{ requisicao.cliente.nome }}</span>
             </div>
             <div class="info-item">
-                <span class="info-label">Total de Senhas:</span>
-                <span class="info-value">{{ requisicao.lista_senhas.count }}</span>
+                <span class="info-label">Valor Total:</span>
+                <span class="info-value">{{ requisicao.valor_total }} MT</span>
             </div>
             <div class="info-item">
-                <span class="info-label">Senhas Não Usadas:</span>
-                <span class="info-value">{{ senhas_nao_usadas.count }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Senhas Restantes:</span>
-                <span class="info-value">{{ requisicao.senhas_restantes }}</span>
+                <span class="info-label">Saldo Restante:</span>
+                <span class="info-value">{{ requisicao.saldo_restante }} MT</span>
             </div>
             <div class="info-item">
                 <span class="info-label">Data Criação:</span>
@@ -224,43 +198,27 @@
         </div>
     </div>
 
-    {% if senhas_nao_usadas %}
-    <div class="qr-grid">
-        {% for senha in senhas_nao_usadas %}
-        <div class="qr-card">
-            <h3>Senha #{{ forloop.counter }}</h3>
-            <div class="senha-codigo">{{ senha.codigo }}</div>
-            <div class="qr-code">
-                <img src="data:image/png;base64,{{ senha.qr_code_base64 }}" alt="QR Code {{ senha.codigo }}">
-            </div>
-            <div class="cliente-info">
-                <strong>Cliente:</strong> {{ senha.cliente.nome }}<br>
-                <strong>Criada em:</strong> {{ senha.data_criacao|date:"d/m/Y H:i" }}<br>
-                {% if senha.usada %}
-                    <strong>Status:</strong> <span style="color: #dc3545;">Usada</span>
-                {% else %}
-                    <strong>Status:</strong> <span style="color: #28a745;">Disponível</span>
-                {% endif %}
-            </div>
+    {% if qr_code %}
+    <div style="text-align: center; margin: 40px 0;">
+        <div class="qr-item" style="display: inline-block; max-width: 400px;">
+            <h3>Código da Requisição</h3>
+            
+            <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code {{ requisicao.codigo }}" style="max-width: 300px; height: auto; margin: 20px 0;">
+            
+            <div class="codigo">{{ requisicao.codigo }}</div>
+            <div class="valor">Valor Total: {{ requisicao.valor_total }} MT</div>
+            <div class="valor">Saldo Restante: {{ requisicao.saldo_restante }} MT</div>
         </div>
-        
-        {% comment %} Quebra de página a cada 6 itens para impressão {% endcomment %}
-        {% if forloop.counter|divisibleby:6 %}
-            <div class="page-break"></div>
-        {% endif %}
-        {% endfor %}
     </div>
     {% else %}
-    <div class="empty-state">
-        <p>Não há senhas não usadas para gerar QR Codes.</p>
-        <a href="{% url 'ver_senhas' requisicao.id %}" class="btn-print btn-back">Ver Todas as Senhas</a>
+    <div style="text-align: center; padding: 40px; color: #666;">
+        <p>Erro ao gerar QR code.</p>
     </div>
     {% endif %}
 
     <div style="margin-top: 40px; text-align: center; font-size: 12px; color: #666;">
-        <p>QR Codes gerados em {{ data_geracao }} | Sistema ENGEN</p>
-        <p>Total de códigos: {{ senhas_nao_usadas.count }}</p>
-        <p>Requisição #{{ requisicao.id }} - {{ requisicao.cliente.nome }}</p>
+        <p>QR Code gerado em {{ data_geracao }} | Sistema ENGEN</p>
+        <p>Código: {{ requisicao.codigo }}</p>
     </div>
 </div>
 

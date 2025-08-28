@@ -71,6 +71,18 @@
         pointer-events: none;
     }
 
+    /* Estilo para botão QR Code */
+    .btn-qr {
+        background-color: #28a745;
+        color: white;
+        border: 1px solid #28a745;
+    }
+
+    .btn-qr:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+    }
+
     /* Responsividade */
     @media (max-width: 768px) {
         .stats-grid {
@@ -156,11 +168,13 @@
                     <td>{{ requisicao.data_criacao|date:"d/m/Y" }}</td>
                     <td class="actions-cell">
                         {% if requisicao.fecho %}
-                            <!-- Requisições fechadas - sem ações de edição/exclusão -->
+                            <!-- Requisições fechadas - apenas visualização de QR codes -->
+                            <a href="{% url 'imprimir_qr_codes_saldo' requisicao.id %}" class="btn-action btn-qr" title="Visualizar QR Codes">QR</a>
                             <span class="btn-action btn-disabled" title="Não é possível editar requisições fechadas">Editar</span>
                             <span class="btn-action btn-disabled" title="Não é possível excluir requisições fechadas">Excluir</span>
                         {% else %}
                             <!-- Requisições abertas - todas as ações disponíveis -->
+                            <a href="{% url 'imprimir_qr_codes_saldo' requisicao.id %}" class="btn-action btn-qr" title="Gerar QR Codes">QR</a>
                             <a href="{% url 'editar_requisicao_saldo' requisicao.id %}" class="btn-action btn-edit">Editar</a>
                             <a href="{% url 'deletar_requisicao_saldo' requisicao.id %}" class="btn-action btn-delete"
                                 onclick="return confirm('Tem certeza que deseja excluir esta requisição de saldo?')">Excluir</a>
