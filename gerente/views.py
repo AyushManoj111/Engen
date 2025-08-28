@@ -24,6 +24,10 @@ from decimal import Decimal, InvalidOperation
 from itertools import chain
 from operator import attrgetter
 import json
+import qrcode
+import base64
+from io import BytesIO
+from PIL import Image
 
 try:
     from reportlab.pdfgen import canvas
@@ -1039,17 +1043,27 @@ def deletar_requisicao(request, requisicao_id):
 
 @user_passes_test(is_gerente, login_url='/login/')
 def ver_senhas(request, requisicao_id):
-   empresa = get_empresa_usuario(request.user)
-   if not empresa:
-       messages.error(request, 'Empresa não encontrada.')
-       return redirect('login')
-   
-   requisicao = get_object_or_404(RequisicaoSenhas, id=requisicao_id, empresa=empresa)
-   senhas = requisicao.lista_senhas.all().order_by('data_criacao')
-   return render(request, 'gerente/senhas.html', {
-       'requisicao': requisicao,
-       'senhas': senhas
-   })
+    """
+    View original atualizada para incluir contagem de senhas disponíveis
+    """
+    empresa = get_empresa_usuario(request.user)
+    if not empresa:
+        messages.error(request, 'Empresa não encontrada.')
+        return redirect('login')
+    
+    requisicao = get_object_or_404(RequisicaoSenhas, id=requisicao_id, empresa=empresa)
+    senhas = requisicao.lista_senhas.all()
+    
+    # Contar senhas disponíveis (não usadas)
+    senhas_disponiveis_count = senhas.filter(usada=False).count()
+    
+    context = {
+        'requisicao': requisicao,
+        'senhas': senhas,
+        'senhas_disponiveis_count': senhas_disponiveis_count,
+    }
+    
+    return render(request, 'gerente/senhas.html', context)
 
 # ================================
 # VIEWS DE REQUISIÇÕES SALDO
@@ -1433,30 +1447,62 @@ def requisicoes_cliente(request, cliente_id):
    return render(request, 'gerente/requisicoes_cliente.html', context)
 
 @user_passes_test(is_gerente, login_url='/login/')
-def exportar_senhas_csv(request, requisicao_id):
-   empresa = get_empresa_usuario(request.user)
-   if not empresa:
-       messages.error(request, 'Empresa não encontrada.')
-       return redirect('login')
-   
-   requisicao = get_object_or_404(RequisicaoSenhas, id=requisicao_id, empresa=empresa)
-   senhas = requisicao.lista_senhas.all()
+def imprimir_qr_codes(request, requisicao_id):
+    """
+    Gera e exibe QR Codes para todas as senhas não usadas de uma requisição
+    """
+    empresa = get_empresa_usuario(request.user)
+    if not empresa:
+        messages.error(request, 'Empresa não encontrada.')
+        return redirect('login')
+    
+    requisicao = get_object_or_404(RequisicaoSenhas, id=requisicao_id, empresa=empresa)
+    senhas_nao_usadas = requisicao.lista_senhas.filter(usada=False)
+    
+    # Gerar QR codes para cada senha não usada
+    senhas_com_qr = []
+    for senha in senhas_nao_usadas:
+        qr_code_base64 = gerar_qr_code(senha.codigo)
+        senha.qr_code_base64 = qr_code_base64
+        senhas_com_qr.append(senha)
+    
+    context = {
+        'requisicao': requisicao,
+        'senhas_nao_usadas': senhas_com_qr,
+        'data_geracao': timezone.now().strftime("%d/%m/%Y %H:%M")
+    }
+    
+    return render(request, 'gerente/qr_codes.html', context)
 
-   response = HttpResponse(content_type='text/csv')
-   response['Content-Disposition'] = f'attachment; filename="senhas_requisicao_{requisicao.id}.csv"'
+def gerar_qr_code(texto):
+    """
+    Gera um QR Code em base64 para o texto fornecido
+    """
+    # Configurar o QR Code
+    qr = qrcode.QRCode(
+        version=1,  # Controla o tamanho do QR Code
+        error_correction=qrcode.constants.ERROR_CORRECT_L,  # Correção de erro baixa
+        box_size=8,  # Tamanho de cada "caixa" do QR Code
+        border=4,   # Tamanho da borda
+    )
+    
+    # Adicionar dados ao QR Code
+    qr.add_data(texto)
+    qr.make(fit=True)
+    
+    # Criar imagem do QR Code
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    # Converter para base64
+    buffer = BytesIO()
+    img.save(buffer, format='PNG')
+    buffer.seek(0)
+    
+    # Codificar em base64
+    qr_code_base64 = base64.b64encode(buffer.getvalue()).decode()
+    
+    return qr_code_base64
 
-   writer = csv.writer(response)
-   writer.writerow(['Código', 'Cliente', 'Usada', 'Data Criação'])
-
-   for senha in senhas:
-       writer.writerow([
-           senha.codigo,
-           senha.cliente.nome,
-           'Sim' if senha.usada else 'Não',
-           senha.data_criacao.strftime("%d/%m/%Y %H:%M")
-       ])
-
-   return response
 
 @user_passes_test(is_gerente, login_url='/login/')
 def gerar_recibo_pdf(request, requisicao_id):

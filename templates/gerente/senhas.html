@@ -6,7 +6,7 @@
 <div class="content-header">
     <h2>Senhas da Requisição #{{ requisicao.id }}</h2>
     <div class="actions">
-        <a href="{% url 'exportar_senhas_csv' requisicao.id %}" class="btn-primary">📥 Exportar CSV</a>
+        <a href="{% url 'imprimir_qr_codes' requisicao.id %}" class="btn-primary">📱 Imprimir QR Codes</a>
         <a href="{% url 'requisicoes' %}" class="btn-back">← Voltar</a>
     </div>
 </div>
@@ -35,9 +35,9 @@
                     <td>#{{ senha.requisicao.id }}</td>
                     <td>
                         {% if senha.usada %}
-                            <span class="status usado">Sim</span>
+                        <span class="status usado">Sim</span>
                         {% else %}
-                            <span class="status disponivel">Não</span>
+                        <span class="status disponivel">Não</span>
                         {% endif %}
                     </td>
                     <td>{{ senha.data_criacao|date:"d/m/Y H:i" }}</td>

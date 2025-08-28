@@ -8,14 +8,40 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center no-print">
-                    <div>
-                        <button onclick="imprimirExtrato()" class="btn btn-primary btn-sm">
-                            <i class="fas fa-print"></i> Imprimir
-                        </button>
-                        <a href="{% url 'clientes' %}" class="btn btn-secondary btn-sm">
-                            <i class="fas fa-arrow-left"></i> Voltar
-                        </a>
+                <!-- Barra de Controles Compacta -->
+                <div class="card-header no-print" style="padding: 10px 15px;">
+                    <div class="d-flex align-items-center justify-content-between" style="font-size: 13px;">
+                        
+                        <!-- Filtros no lado esquerdo -->
+                        <div class="d-flex align-items-center" style="gap: 10px;">
+                            <span style="color: #6c757d; font-weight: 500;">Período:</span>
+                            
+                            <input type="date" class="form-control" id="dataInicial" style="width: 130px; font-size: 12px; padding: 5px 8px; height: auto;">
+                            
+                            <span style="color: #6c757d;">até</span>
+                            
+                            <input type="date" class="form-control" id="dataFinal" style="width: 130px; font-size: 12px; padding: 5px 8px; height: auto;">
+                            
+                            <button onclick="aplicarFiltros()" class="btn btn-primary" style="font-size: 12px; padding: 5px 10px;">
+                                <i class="fas fa-search" style="font-size: 11px;"></i> Filtrar
+                            </button>
+                            
+                            <button onclick="limparFiltros()" class="btn btn-outline-secondary" style="font-size: 12px; padding: 5px 10px;">
+                                <i class="fas fa-times" style="font-size: 11px;"></i> Limpar
+                            </button>
+                        </div>
+
+                        <!-- Botões de ação no lado direito -->
+                        <div class="d-flex align-items-center" style="gap: 8px;">
+                            <button onclick="imprimirExtrato()" class="btn btn-primary" style="font-size: 12px; padding: 5px 10px;">
+                                <i class="fas fa-print" style="font-size: 11px;"></i> Imprimir
+                            </button>
+                            
+                            <a href="{% url 'clientes' %}" class="btn btn-secondary" style="font-size: 12px; padding: 5px 10px;">
+                                <i class="fas fa-arrow-left" style="font-size: 11px;"></i> Voltar
+                            </a>
+                        </div>
+                        
                     </div>
                 </div>
 
@@ -67,37 +93,37 @@
                     {% if tem_movimentacao %}
                     <!-- Tabela do Extrato -->
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
+                        <table class="table table-striped table-hover table-compact">
                             <thead class="table-dark">
                                 <tr>
                                     <th>Data</th>
                                     <th>Descrição</th>
-                                    <th>Forma Pagamento</th>
-                                    <th>Nº Requisição</th>
+                                    <th>F.Pag</th>
+                                    <th>Nº Req</th>
                                     <th>Crédito</th>
                                     <th>Débito</th>
-                                    <th>Senha Usada</th>
+                                    <th>Senha</th>
                                     <th>Combustível</th>
                                     <th>Saldo</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="tabelaExtrato">
                                 {% for item in extrato %}
-                                <tr>
-                                    <td>{{ item.data|date:"d/m/Y H:i" }}</td>
+                                <tr data-date="{{ item.data|date:'Y-m-d' }}">
+                                    <td>{{ item.data|date:"d/m" }}</td>
                                     <td>{{ item.descricao }}</td>
                                     <td>{{ item.forma_pagamento }}</td>
                                     <td>{{ item.numero_requisicoes }}</td>
                                     <td>
                                         {% if item.credito %}
-                                        <span class="text-success">+ {{ item.credito|floatformat:2 }} MT</span>
+                                        <span class="text-success">+ {{ item.credito|floatformat:2 }}</span>
                                         {% else %}
                                         <span class="text-muted">-</span>
                                         {% endif %}
                                     </td>
                                     <td>
                                         {% if item.debito %}
-                                        <span class="text-danger">- {{ item.debito|floatformat:2 }} MT</span>
+                                        <span class="text-danger">- {{ item.debito|floatformat:2 }}</span>
                                         {% else %}
                                         <span class="text-muted">-</span>
                                         {% endif %}
@@ -121,7 +147,7 @@
                                     <td>
                                         <strong
                                             class="{% if item.saldo >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                            {{ item.saldo|floatformat:2 }} MT
+                                            {{ item.saldo|floatformat:2 }}
                                         </strong>
                                     </td>
                                 </tr>
@@ -137,16 +163,16 @@
                                 <div class="row text-center">
                                     <div class="col-md-4">
                                         <h6><i class="fas fa-arrow-up text-success"></i> Total Entradas</h6>
-                                        <h5 class="text-success">{{ total_creditos|floatformat:2 }} MT</h5>
+                                        <h5 class="text-success" id="totalCreditos">{{ total_creditos|floatformat:2 }} MT</h5>
                                     </div>
                                     <div class="col-md-4">
                                         <h6><i class="fas fa-arrow-down text-danger"></i> Total Saídas</h6>
-                                        <h5 class="text-danger">{{ total_debitos|floatformat:2 }} MT</h5>
+                                        <h5 class="text-danger" id="totalDebitos">{{ total_debitos|floatformat:2 }} MT</h5>
                                     </div>
                                     <div class="col-md-4">
                                         <h6><i class="fas fa-wallet text-primary"></i> Saldo Final</h6>
                                         <h5
-                                            class="{% if saldo_atual >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                            class="{% if saldo_atual >= 0 %}text-success{% else %}text-danger{% endif %}" id="saldoFinal">
                                             {{ saldo_atual|floatformat:2 }} MT
                                         </h5>
                                     </div>
@@ -168,6 +194,22 @@
 </div>
 
 <style>
+    /* Tabela mais compacta */
+    .table-compact {
+        font-size: 12px;
+    }
+    
+    .table-compact th,
+    .table-compact td {
+        padding: 6px 8px;
+        vertical-align: middle;
+    }
+    
+    .table-compact th {
+        font-size: 11px;
+        font-weight: 600;
+    }
+
     .print-only {
         display: none;
     }
@@ -214,6 +256,42 @@
         font-size: 0.8rem;
     }
 
+    /* Estilos simplificados para a barra de controles */
+    .form-control-sm {
+        border-radius: 4px;
+        border: 1px solid #ced4da;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .form-control-sm:focus {
+        border-color: #80bdff;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .btn-sm {
+        border-radius: 4px;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .btn-sm:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* Responsividade da barra */
+    @media (max-width: 992px) {
+        .card-header .d-flex {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 10px !important;
+        }
+        
+        .card-header .d-flex > div {
+            justify-content: center;
+        }
+    }
+
     @media print {
         .no-print {
             display: none !important;
@@ -226,6 +304,15 @@
         .card {
             box-shadow: none !important;
             border: none !important;
+        }
+
+        .table-compact {
+            font-size: 10px;
+        }
+        
+        .table-compact th,
+        .table-compact td {
+            padding: 4px 6px;
         }
 
         .table th {
@@ -299,6 +386,15 @@
                     
                     .no-print {
                         display: none !important;
+                    }
+                    
+                    .table-compact {
+                        font-size: 10px;
+                    }
+                    
+                    .table-compact th,
+                    .table-compact td {
+                        padding: 4px 6px;
                     }
                     
                     .extrato-header {
@@ -389,7 +485,7 @@
                         }
                         
                         .table {
-                            font-size: 11px;
+                            font-size: 10px;
                         }
                         
                         @page {
@@ -410,11 +506,91 @@
         printWindow.document.close();
         printWindow.focus();
 
-        // Aguardar carregar e imprimir
         printWindow.onload = function () {
             printWindow.print();
             printWindow.close();
         };
+    }
+
+    // Funções de filtro por data
+    function aplicarFiltros() {
+        const dataInicial = document.getElementById('dataInicial').value;
+        const dataFinal = document.getElementById('dataFinal').value;
+        const linhas = document.querySelectorAll('#tabelaExtrato tr[data-date]');
+        
+        let totalCreditos = 0;
+        let totalDebitos = 0;
+        let linhasVisiveis = 0;
+        let ultimoSaldo = 0;
+        
+        linhas.forEach(linha => {
+            const dataLinha = linha.getAttribute('data-date');
+            let mostrar = true;
+            
+            if (dataInicial && dataLinha < dataInicial) {
+                mostrar = false;
+            }
+            
+            if (dataFinal && dataLinha > dataFinal) {
+                mostrar = false;
+            }
+            
+            if (mostrar) {
+                linha.style.display = '';
+                linhasVisiveis++;
+                
+                // Calcular totais das linhas visíveis
+                const credito = linha.querySelector('td:nth-child(5) .text-success');
+                const debito = linha.querySelector('td:nth-child(6) .text-danger');
+                const saldo = linha.querySelector('td:nth-child(9) strong');
+                
+                if (credito) {
+                    totalCreditos += parseFloat(credito.textContent.replace(/[+\s]/g, '').replace(',', '.'));
+                }
+                
+                if (debito) {
+                    totalDebitos += parseFloat(debito.textContent.replace(/[-\s]/g, '').replace(',', '.'));
+                }
+                
+                if (saldo) {
+                    ultimoSaldo = parseFloat(saldo.textContent.replace(',', '.'));
+                }
+            } else {
+                linha.style.display = 'none';
+            }
+        });
+        
+        // Atualizar totalizadores
+        document.getElementById('totalCreditos').textContent = totalCreditos.toFixed(2).replace('.', ',') + ' MT';
+        document.getElementById('totalDebitos').textContent = totalDebitos.toFixed(2).replace('.', ',') + ' MT';
+        document.getElementById('saldoFinal').textContent = ultimoSaldo.toFixed(2).replace('.', ',') + ' MT';
+        
+        // Mostrar mensagem se não houver resultados
+        if (linhasVisiveis === 0) {
+            const tbody = document.getElementById('tabelaExtrato');
+            tbody.innerHTML += '<tr id="semResultados"><td colspan="9" class="text-center py-4 text-muted">Nenhum registro encontrado no período selecionado</td></tr>';
+        }
+    }
+
+    function limparFiltros() {
+        document.getElementById('dataInicial').value = '';
+        document.getElementById('dataFinal').value = '';
+        
+        const linhas = document.querySelectorAll('#tabelaExtrato tr');
+        linhas.forEach(linha => {
+            linha.style.display = '';
+        });
+        
+        // Remover mensagem de sem resultados se existir
+        const semResultados = document.getElementById('semResultados');
+        if (semResultados) {
+            semResultados.remove();
+        }
+        
+        // Restaurar totalizadores originais
+        document.getElementById('totalCreditos').textContent = '{{ total_creditos|floatformat:2 }} MT';
+        document.getElementById('totalDebitos').textContent = '{{ total_debitos|floatformat:2 }} MT';
+        document.getElementById('saldoFinal').textContent = '{{ saldo_atual|floatformat:2 }} MT';
     }
 </script>
 

@@ -17,49 +17,54 @@
             font-family: system-ui, sans-serif;
             background: #f8fafc;
             color: #1e293b;
+            min-height: 100vh;
         }
 
         .header {
             background: #0f172a;
             color: white;
             padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .header-content {
-            max-width: 1200px;
+            max-width: 400px;
             margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr auto auto;
-            align-items: center;
-            gap: 1rem;
+            text-align: center;
         }
 
         .header h1 {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             font-weight: 600;
+            margin-bottom: 0.5rem;
         }
 
         .company-info {
-            font-size: 0.875rem;
-            text-align: center;
+            font-size: 0.75rem;
+            margin-bottom: 0.75rem;
+            opacity: 0.9;
         }
 
         .company-info .company-name {
             font-weight: 600;
+            margin-bottom: 0.25rem;
         }
 
         .logout-section {
             display: flex;
-            justify-content: flex-end;
+            justify-content: center;
         }
 
         .logout-link {
             color: rgba(255, 255, 255, 0.8);
             text-decoration: none;
-            padding: 0.25rem 0.5rem;
+            padding: 0.5rem 1rem;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
+            border-radius: 6px;
             transition: all 0.2s;
+            font-size: 0.875rem;
         }
 
         .logout-link:hover {
@@ -68,21 +73,22 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 400px;
             margin: 0 auto;
-            padding: 1.5rem;
+            padding: 1rem;
         }
 
         .messages {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .messages li {
             list-style: none;
-            padding: 1rem;
+            padding: 0.875rem;
             border-radius: 8px;
             margin-bottom: 0.5rem;
             font-weight: 500;
+            font-size: 0.875rem;
         }
 
         .success {
@@ -102,47 +108,178 @@
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             overflow: hidden;
+            margin-bottom: 1rem;
         }
 
         .section-header {
             background: #f1f5f9;
-            padding: 1.5rem;
+            padding: 1rem;
             border-bottom: 1px solid #e2e8f0;
+            text-align: center;
         }
 
         .section-header h2 {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             font-weight: 600;
         }
 
-        .scan-form {
-            padding: 1.5rem;
+        .scan-methods {
+            display: flex;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
         }
 
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr auto;
+        .method-tab {
+            flex: 1;
+            padding: 0.75rem;
+            text-align: center;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .method-tab.active {
+            background: white;
+            color: #0f172a;
+            border-bottom: 2px solid #0f172a;
+        }
+
+        .method-content {
+            display: none;
+            padding: 1rem;
+        }
+
+        .method-content.active {
+            display: block;
+        }
+
+        /* QR Scanner Styles */
+        .qr-scanner {
+            position: relative;
+        }
+
+        .camera-container {
+            position: relative;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #camera-video {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            display: none;
+        }
+
+        .camera-placeholder {
+            width: 100%;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e5e7eb;
+            color: #6b7280;
+            flex-direction: column;
             gap: 1rem;
-            align-items: end;
+        }
+
+        .camera-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border: 2px solid #22c55e;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+
+        .camera-overlay::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border: 2px solid rgba(34, 197, 94, 0.3);
+            border-radius: 8px;
+            animation: scan-animation 2s linear infinite;
+        }
+
+        @keyframes scan-animation {
+            0% { border-color: rgba(34, 197, 94, 0.3); }
+            50% { border-color: rgba(34, 197, 94, 0.8); }
+            100% { border-color: rgba(34, 197, 94, 0.3); }
+        }
+
+        .camera-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .camera-btn {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .start-camera {
+            background: #22c55e;
+            color: white;
+        }
+
+        .start-camera:hover {
+            background: #16a34a;
+        }
+
+        .stop-camera {
+            background: #ef4444;
+            color: white;
+        }
+
+        .stop-camera:hover {
+            background: #dc2626;
+        }
+
+        .camera-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Manual Input Styles */
+        .scan-form {
+            padding: 1rem;
         }
 
         .form-group {
             display: flex;
             flex-direction: column;
+            margin-bottom: 1.25rem;
         }
 
         .form-group label {
             font-size: 0.875rem;
-            font-weight: 500;
+            font-weight: 600;
             color: #374151;
             margin-bottom: 0.5rem;
         }
 
         .form-group input {
-            padding: 0.75rem;
-            border: 1.5px solid #e5e7eb;
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
             border-radius: 8px;
             font-size: 1rem;
+            transition: all 0.2s;
         }
 
         .form-group input:focus {
@@ -151,17 +288,29 @@
             box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
         }
 
+        .fuel-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .fuel-group label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
         .fuel-options {
             display: flex;
-            gap: 1rem;
-            margin-top: 0.5rem;
+            flex-direction: column;
+            gap: 0.75rem;
         }
 
         .fuel-option {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
+            gap: 0.75rem;
+            padding: 1rem;
             border: 2px solid #e5e7eb;
             border-radius: 8px;
             cursor: pointer;
@@ -180,28 +329,53 @@
         }
 
         .fuel-option input[type="radio"] {
+            width: 18px;
+            height: 18px;
             margin: 0;
-            padding: 0;
-            width: auto;
         }
 
-        .fuel-option label {
+        .fuel-content {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .fuel-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .fuel-icon.gasolina {
+            background: #ef4444;
+        }
+
+        .fuel-icon.diesel {
+            background: #22c55e;
+        }
+
+        .fuel-option .fuel-label {
             margin: 0;
             cursor: pointer;
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             font-weight: 500;
+            color: #374151;
         }
 
         .scan-button {
             background: #0f172a;
             color: white;
             border: none;
-            padding: 0.75rem 1.5rem;
+            padding: 1rem;
             border-radius: 8px;
             font-size: 1rem;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            width: 100%;
+            margin-top: 0.5rem;
         }
 
         .scan-button:hover {
@@ -213,67 +387,121 @@
             cursor: not-allowed;
         }
 
-        .fuel-icons {
-            display: flex;
+        .scan-button:active {
+            transform: translateY(1px);
+        }
+
+        /* Scanner Status */
+        .scanner-status {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+        }
+
+        .scanner-status.scanning {
+            display: block;
+            background: #dbeafe;
+            color: #1d4ed8;
+            border: 1px solid #93c5fd;
+        }
+
+        .scanner-status.detected {
+            display: block;
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #22c55e;
+        }
+
+        .scanner-status.error {
+            display: block;
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+
+        /* Detected Code Info */
+        .detected-info {
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .detected-info.show {
+            display: block;
+        }
+
+        .detected-info h3 {
+            color: #0c4a6e;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .detected-info p {
+            margin: 0.25rem 0;
+            font-size: 0.875rem;
+            color: #0369a1;
+        }
+
+        /* Processing Modal */
+        .processing-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
             align-items: center;
-            gap: 0.25rem;
+            justify-content: center;
+            z-index: 1000;
         }
 
-        .fuel-icon {
-            width: 16px;
-            height: 16px;
+        .processing-modal.show {
+            display: flex;
+        }
+
+        .processing-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 300px;
+            margin: 1rem;
+        }
+
+        .processing-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #0f172a;
             border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
         }
 
-        .fuel-icon.gasolina {
-            background: #ef4444;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
-        .fuel-icon.diesel {
-            background: #22c55e;
-        }
-
-        /* Mobile */
-        @media (max-width: 768px) {
-            .header-content {
-                grid-template-columns: 1fr;
-                text-align: center;
-                gap: 0.75rem;
-            }
-
-            .company-info {
-                order: 2;
-            }
-
-            .logout-section {
-                order: 3;
-                justify-content: center;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-
-            .fuel-options {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-
+        /* Responsive */
+        @media (max-width: 320px) {
             .container {
-                padding: 1rem;
+                padding: 0.75rem;
             }
-        }
-
-        @media (max-width: 1024px) {
-            .form-row {
-                grid-template-columns: 1fr 1fr;
-                gap: 1rem;
+            
+            .scan-form {
+                padding: 0.75rem;
             }
-
-            .form-row> :nth-child(3),
-            .form-row> :nth-child(4) {
-                grid-column: span 2;
+            
+            .header {
+                padding: 0.75rem;
             }
         }
     </style>
@@ -308,126 +536,605 @@
             <div class="section-header">
                 <h2>Scanner</h2>
             </div>
-            <div class="scan-form">
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="string">Código</label>
-                            <input id="string" name="string" type="text" placeholder="Digite ou escaneie o código"
-                                required autocomplete="off" autofocus />
+            
+            <!-- Tabs para métodos de scan -->
+            <div class="scan-methods">
+                <button class="method-tab active" data-method="camera">QR Camera</button>
+                <button class="method-tab" data-method="manual">Manual</button>
+            </div>
+
+            <!-- Status do scanner -->
+            <div id="scanner-status" class="scanner-status">
+                Posicione o QR Code dentro da área destacada
+            </div>
+
+            <!-- Informações do código detectado -->
+            <div id="detected-info" class="detected-info">
+                <h3>Código Detectado:</h3>
+                <p id="detected-code"></p>
+                <p id="detected-type"></p>
+                <p id="detected-details"></p>
+            </div>
+
+            <!-- Método QR Camera -->
+            <div id="camera-method" class="method-content active">
+                <div class="qr-scanner">
+                    <div class="camera-container">
+                        <video id="camera-video" autoplay playsinline></video>
+                        <canvas id="camera-canvas" style="display: none;"></canvas>
+                        <div class="camera-placeholder">
+                            <div>📷</div>
+                            <div>Clique em "Iniciar Camera" para começar</div>
                         </div>
+                        <div class="camera-overlay"></div>
+                    </div>
+                    
+                    <div class="camera-controls">
+                        <button id="start-camera" class="camera-btn start-camera">Iniciar Camera</button>
+                        <button id="stop-camera" class="camera-btn stop-camera" disabled>Parar Camera</button>
+                    </div>
+
+                    <!-- Formulário para processar código escaneado -->
+                    <form id="qr-process-form" style="display: none;">
                         <div class="form-group">
-                            <label for="valor">Valor (MT)</label>
-                            <input id="valor" name="valor" type="number" step="0.01" min="0"
-                                placeholder="0.00 (para saldo)" />
+                            <label for="qr-valor">Valor (MT) - Opcional para saldo</label>
+                            <input id="qr-valor" name="valor" type="number" step="0.01" min="0"
+                                placeholder="0.00 (deixe vazio para consultar)" />
                         </div>
-                        <div class="form-group">
-                            <label>Tipo de Combustível</label>
+                        
+                        <div class="fuel-group">
+                            <label>Tipo de Combustível (Obrigatório)</label>
                             <div class="fuel-options">
                                 <div class="fuel-option" data-fuel="gasolina">
-                                    <input type="radio" id="gasolina" name="tipo_combustivel" value="gasolina">
-                                    <div class="fuel-icons">
+                                    <input type="radio" id="qr-gasolina" name="qr_tipo_combustivel" value="gasolina">
+                                    <div class="fuel-content">
                                         <div class="fuel-icon gasolina"></div>
-                                        <label for="gasolina">Gasolina</label>
+                                        <label for="qr-gasolina" class="fuel-label">Gasolina</label>
                                     </div>
                                 </div>
                                 <div class="fuel-option" data-fuel="diesel">
-                                    <input type="radio" id="diesel" name="tipo_combustivel" value="diesel">
-                                    <div class="fuel-icons">
+                                    <input type="radio" id="qr-diesel" name="qr_tipo_combustivel" value="diesel">
+                                    <div class="fuel-content">
                                         <div class="fuel-icon diesel"></div>
-                                        <label for="diesel">Diesel</label>
+                                        <label for="qr-diesel" class="fuel-label">Diesel</label>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        
                         <button type="submit" class="scan-button">
-                            Processar
+                            Processar Código
                         </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Método Manual -->
+            <div id="manual-method" class="method-content">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label for="string">Código</label>
+                        <input id="string" name="string" type="text" placeholder="Digite ou escaneie o código"
+                            required autocomplete="off" />
                     </div>
+                    
+                    <div class="form-group">
+                        <label for="valor">Valor (MT)</label>
+                        <input id="valor" name="valor" type="number" step="0.01" min="0"
+                            placeholder="0.00 (para consultar saldo)" />
+                    </div>
+                    
+                    <div class="fuel-group">
+                        <label>Tipo de Combustível (Obrigatório)</label>
+                        <div class="fuel-options">
+                            <div class="fuel-option" data-fuel="gasolina">
+                                <input type="radio" id="gasolina" name="tipo_combustivel" value="gasolina">
+                                <div class="fuel-content">
+                                    <div class="fuel-icon gasolina"></div>
+                                    <label for="gasolina" class="fuel-label">Gasolina</label>
+                                </div>
+                            </div>
+                            <div class="fuel-option" data-fuel="diesel">
+                                <input type="radio" id="diesel" name="tipo_combustivel" value="diesel">
+                                <div class="fuel-content">
+                                    <div class="fuel-icon diesel"></div>
+                                    <label for="diesel" class="fuel-label">Diesel</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="scan-button">
+                        Processar
+                    </button>
                 </form>
             </div>
         </div>
     </div>
 
+    <!-- Modal de processamento -->
+    <div id="processing-modal" class="processing-modal">
+        <div class="processing-content">
+            <div class="processing-spinner"></div>
+            <p>Processando...</p>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const stringInput = document.getElementById('string');
-            const valorInput = document.getElementById('valor');
-            const form = document.querySelector('form');
-            const fuelOptions = document.querySelectorAll('.fuel-option');
-            const urlParams = new URLSearchParams(window.location.search);
+            // Elementos
+            const methodTabs = document.querySelectorAll('.method-tab');
+            const methodContents = document.querySelectorAll('.method-content');
+            const startCameraBtn = document.getElementById('start-camera');
+            const stopCameraBtn = document.getElementById('stop-camera');
+            const cameraVideo = document.getElementById('camera-video');
+            const cameraCanvas = document.getElementById('camera-canvas');
+            const cameraPlaceholder = document.querySelector('.camera-placeholder');
+            const scannerStatus = document.getElementById('scanner-status');
+            const detectedInfo = document.getElementById('detected-info');
+            const qrProcessForm = document.getElementById('qr-process-form');
+            const processingModal = document.getElementById('processing-modal');
+            
+            // Variáveis de estado
+            let isScanning = false;
+            let detectedCodeData = null;
+            let scanInterval = null;
+            let mediaStream = null;
 
-            // Limpar campos após sucesso
-            if (urlParams.get('success') === '1') {
-                stringInput.value = '';
-                valorInput.value = '';
-                // Limpar seleção de combustível
-                document.querySelectorAll('input[name="tipo_combustivel"]').forEach(radio => {
-                    radio.checked = false;
+            // Gerenciar tabs
+            methodTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const method = this.dataset.method;
+                    
+                    // Parar câmera se estiver ativa
+                    if (isScanning) {
+                        stopCamera();
+                    }
+                    
+                    // Atualizar tabs
+                    methodTabs.forEach(t => t.classList.remove('active'));
+                    methodContents.forEach(c => c.classList.remove('active'));
+                    
+                    this.classList.add('active');
+                    document.getElementById(method + '-method').classList.add('active');
+                    
+                    // Focar no campo apropriado
+                    if (method === 'manual') {
+                        setTimeout(() => {
+                            document.getElementById('string').focus();
+                        }, 100);
+                    }
                 });
-                fuelOptions.forEach(option => option.classList.remove('selected'));
-            }
+            });
 
-            // Gerenciar seleção visual dos combustíveis
-            fuelOptions.forEach(option => {
-                option.addEventListener('click', function () {
+            // Gerenciar seleção de combustível (QR)
+            const qrFuelOptions = document.querySelectorAll('#camera-method .fuel-option');
+            qrFuelOptions.forEach(option => {
+                option.addEventListener('click', function (e) {
+                    if (e.target.type === 'radio') return;
+                    
                     const fuelType = this.dataset.fuel;
-                    const radio = document.getElementById(fuelType);
+                    const radio = document.getElementById('qr-' + fuelType);
 
-                    // Desmarcar todos
-                    fuelOptions.forEach(opt => opt.classList.remove('selected'));
-                    document.querySelectorAll('input[name="tipo_combustivel"]').forEach(r => r.checked = false);
+                    qrFuelOptions.forEach(opt => opt.classList.remove('selected'));
+                    document.querySelectorAll('input[name="qr_tipo_combustivel"]').forEach(r => r.checked = false);
 
-                    // Marcar o selecionado
                     this.classList.add('selected');
                     radio.checked = true;
                 });
             });
 
-            // Campo de combustível sempre visível - não precisa de lógica especial
+            // Gerenciar seleção de combustível (Manual)
+            const manualFuelOptions = document.querySelectorAll('#manual-method .fuel-option');
+            manualFuelOptions.forEach(option => {
+                option.addEventListener('click', function (e) {
+                    if (e.target.type === 'radio') return;
+                    
+                    const fuelType = this.dataset.fuel;
+                    const radio = document.getElementById(fuelType);
 
-            // Enter no código sem valor
-            stringInput.addEventListener('keypress', function (e) {
-                if (e.key === 'Enter' && !valorInput.value) {
-                    form.submit();
-                }
+                    manualFuelOptions.forEach(opt => opt.classList.remove('selected'));
+                    document.querySelectorAll('input[name="tipo_combustivel"]').forEach(r => r.checked = false);
+
+                    this.classList.add('selected');
+                    radio.checked = true;
+                });
             });
 
-            // Validação do formulário - substituir a função existente
-            form.addEventListener('submit', function (e) {
-                const codigo = stringInput.value.trim();
-                const valor = valorInput.value;
-                const tipoCombustivel = document.querySelector('input[name="tipo_combustivel"]:checked');
+            // Gerenciar mudança direta no radio button
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const isQr = this.name === 'qr_tipo_combustivel';
+                    const options = isQr ? qrFuelOptions : manualFuelOptions;
+                    
+                    options.forEach(opt => opt.classList.remove('selected'));
+                    const selectedOption = document.querySelector(
+                        `.fuel-option[data-fuel="${this.value}"]`
+                    );
+                    if (selectedOption) {
+                        selectedOption.classList.add('selected');
+                    }
+                });
+            });
 
-                // Verificar se código foi preenchido
-                if (!codigo) {
-                    e.preventDefault();
-                    alert('Por favor, digite ou escaneie um código.');
-                    stringInput.focus();
+            // Função para iniciar câmera
+            async function startCamera() {
+                try {
+                    showStatus('Solicitando acesso à câmera...', 'scanning');
+                    
+                    // Solicitar acesso à câmera
+                    const constraints = {
+                        video: {
+                            facingMode: { ideal: 'environment' }, // Câmera traseira preferencialmente
+                            width: { ideal: 640 },
+                            height: { ideal: 480 }
+                        }
+                    };
+                    
+                    mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+                    
+                    // Configurar vídeo
+                    cameraVideo.srcObject = mediaStream;
+                    cameraVideo.style.display = 'block';
+                    cameraPlaceholder.style.display = 'none';
+                    
+                    // Aguardar vídeo carregar
+                    await new Promise((resolve) => {
+                        cameraVideo.onloadedmetadata = resolve;
+                    });
+                    
+                    // Configurar canvas
+                    cameraCanvas.width = cameraVideo.videoWidth || 640;
+                    cameraCanvas.height = cameraVideo.videoHeight || 480;
+                    
+                    isScanning = true;
+                    startCameraBtn.disabled = true;
+                    stopCameraBtn.disabled = false;
+                    
+                    showStatus('Procurando QR codes...', 'scanning');
+                    
+                    // Iniciar captura de frames para análise
+                    startQRDetection();
+                    
+                } catch (error) {
+                    console.error('Erro ao iniciar câmera:', error);
+                    
+                    let errorMessage = 'Erro ao acessar câmera';
+                    if (error.name === 'NotAllowedError') {
+                        errorMessage = 'Acesso à câmera negado. Permita o acesso para usar o scanner.';
+                    } else if (error.name === 'NotFoundError') {
+                        errorMessage = 'Câmera não encontrada no dispositivo.';
+                    } else if (error.name === 'NotSupportedError') {
+                        errorMessage = 'Câmera não suportada pelo navegador.';
+                    }
+                    
+                    showStatus(errorMessage, 'error');
+                    resetCameraState();
+                }
+            }
+
+            // Função para parar câmera
+            async function stopCamera() {
+                try {
+                    // Parar análise de QR
+                    if (scanInterval) {
+                        clearInterval(scanInterval);
+                        scanInterval = null;
+                    }
+                    
+                    // Parar stream da câmera
+                    if (mediaStream) {
+                        mediaStream.getTracks().forEach(track => track.stop());
+                        mediaStream = null;
+                    }
+                    
+                    resetCameraState();
+                    showStatus('Câmera parada', 'error');
+                    
+                } catch (error) {
+                    console.error('Erro ao parar câmera:', error);
+                    resetCameraState();
+                }
+            }
+
+            // Função para resetar estado da câmera
+            function resetCameraState() {
+                cameraVideo.style.display = 'none';
+                cameraPlaceholder.style.display = 'flex';
+                isScanning = false;
+                startCameraBtn.disabled = false;
+                stopCameraBtn.disabled = true;
+                hideDetectedInfo();
+                qrProcessForm.style.display = 'none';
+                
+                if (scanInterval) {
+                    clearInterval(scanInterval);
+                    scanInterval = null;
+                }
+                
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(track => track.stop());
+                    mediaStream = null;
+                }
+            }
+
+            // Função para iniciar detecção de QR
+            function startQRDetection() {
+                scanInterval = setInterval(async () => {
+                    if (!isScanning || !cameraVideo.videoWidth) return;
+                    
+                    try {
+                        // Capturar frame atual no canvas
+                        const ctx = cameraCanvas.getContext('2d');
+                        cameraCanvas.width = cameraVideo.videoWidth;
+                        cameraCanvas.height = cameraVideo.videoHeight;
+                        
+                        // Desenhar frame do vídeo no canvas
+                        ctx.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
+                        
+                        // Converter para base64
+                        const imageData = cameraCanvas.toDataURL('image/jpeg', 0.8);
+                        
+                        // Enviar para análise no backend
+                        const response = await fetch('{% url "scan_qr_code" %}', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': getCookie('csrftoken'),
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ image: imageData })
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            // QR Code detectado
+                            detectedCodeData = result;
+                            showDetectedCode(result);
+                            showStatus('QR Code detectado!', 'detected');
+                            
+                            // Parar scanning temporariamente
+                            clearInterval(scanInterval);
+                            scanInterval = null;
+                        }
+                        
+                    } catch (error) {
+                        console.error('Erro na detecção QR:', error);
+                    }
+                }, 1000); // Verificar a cada segundo
+            }
+
+            // Função para mostrar código detectado
+            function showDetectedCode(data) {
+                document.getElementById('detected-code').textContent = data.codigo;
+                document.getElementById('detected-type').textContent = 
+                    data.type === 'senha' ? 'Tipo: Senha' : 'Tipo: Saldo';
+                
+                let details = '';
+                if (data.type === 'senha') {
+                    details = `Cliente: ${data.data.cliente} | Status: ${data.data.usada ? 'Usada' : 'Disponível'}`;
+                } else {
+                    details = `Cliente: ${data.data.cliente} | Saldo: ${data.data.saldo_restante} MT`;
+                }
+                document.getElementById('detected-details').textContent = details;
+                
+                detectedInfo.classList.add('show');
+                qrProcessForm.style.display = 'block';
+                
+                // Se for senha, esconder campo valor
+                const valorInput = document.getElementById('qr-valor');
+                if (data.type === 'senha') {
+                    valorInput.parentElement.style.display = 'none';
+                    valorInput.value = '';
+                } else {
+                    valorInput.parentElement.style.display = 'block';
+                }
+            }
+
+            // Função para esconder informações detectadas
+            function hideDetectedInfo() {
+                detectedInfo.classList.remove('show');
+                detectedCodeData = null;
+            }
+
+            // Função para mostrar status
+            function showStatus(message, type) {
+                scannerStatus.textContent = message;
+                scannerStatus.className = `scanner-status ${type}`;
+            }
+
+            // Processar formulário QR
+            qrProcessForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                if (!detectedCodeData) {
+                    alert('Nenhum código detectado');
                     return;
                 }
-
-                // NOVA VALIDAÇÃO: Combustível obrigatório para TODAS as operações
+                
+                const valor = document.getElementById('qr-valor').value;
+                const tipoCombustivel = document.querySelector('input[name="qr_tipo_combustivel"]:checked');
+                
+                // Validações
                 if (!tipoCombustivel) {
-                    e.preventDefault();
                     alert('Por favor, selecione o tipo de combustível.');
                     return;
                 }
-
-                // Validação adicional: se tem valor mas é zero ou negativo
-                if (valor && parseFloat(valor) <= 0) {
-                    e.preventDefault();
-                    alert('O valor deve ser maior que zero ou deixe em branco para consultar saldo.');
-                    valorInput.focus();
+                
+                if (detectedCodeData.type === 'saldo' && !valor) {
+                    alert('Para débito de saldo é necessário informar o valor.');
                     return;
                 }
-
-                // Se chegou até aqui, tudo está válido
-                const button = document.querySelector('.scan-button');
-                button.textContent = 'Processando...';
-                button.disabled = true;
+                
+                if (valor && parseFloat(valor) <= 0) {
+                    alert('O valor deve ser maior que zero.');
+                    return;
+                }
+                
+                try {
+                    showProcessingModal();
+                    
+                    const response = await fetch('{% url "process_scanned_code" %}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken'),
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            codigo: detectedCodeData.codigo,
+                            type: detectedCodeData.type,
+                            valor: valor,
+                            tipo_combustivel: tipoCombustivel.value
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    hideProcessingModal();
+                    
+                    if (result.success) {
+                        showMessage(result.message, 'success');
+                        resetAfterSuccess();
+                    } else {
+                        showMessage(result.error, 'error');
+                    }
+                    
+                } catch (error) {
+                    hideProcessingModal();
+                    console.error('Erro ao processar:', error);
+                    showMessage('Erro ao processar código', 'error');
+                }
             });
+
+            // Função para resetar após sucesso
+            function resetAfterSuccess() {
+                // Limpar formulário QR
+                document.getElementById('qr-valor').value = '';
+                document.querySelectorAll('input[name="qr_tipo_combustivel"]').forEach(r => r.checked = false);
+                qrFuelOptions.forEach(opt => opt.classList.remove('selected'));
+                
+                // Esconder informações e formulário
+                hideDetectedInfo();
+                qrProcessForm.style.display = 'none';
+                
+                // Reiniciar scanning se câmera estiver ativa
+                if (isScanning) {
+                    setTimeout(() => {
+                        showStatus('Procurando QR codes...', 'scanning');
+                        startQRDetection();
+                    }, 2000);
+                }
+            }
+
+            // Event listeners para câmera
+            startCameraBtn.addEventListener('click', startCamera);
+            stopCameraBtn.addEventListener('click', stopCamera);
+
+            // Função para mostrar modal de processamento
+            function showProcessingModal() {
+                processingModal.classList.add('show');
+            }
+
+            // Função para esconder modal de processamento
+            function hideProcessingModal() {
+                processingModal.classList.remove('show');
+            }
+
+            // Função para mostrar mensagem
+            function showMessage(message, type) {
+                const messagesContainer = document.querySelector('.messages');
+                if (!messagesContainer) {
+                    const container = document.querySelector('.container');
+                    const newMessages = document.createElement('ul');
+                    newMessages.className = 'messages';
+                    container.insertBefore(newMessages, container.firstChild);
+                }
+                
+                const messageElement = document.createElement('li');
+                messageElement.className = type;
+                messageElement.textContent = message;
+                
+                const messages = document.querySelector('.messages');
+                messages.appendChild(messageElement);
+                
+                // Remover mensagem após 5 segundos
+                setTimeout(() => {
+                    messageElement.remove();
+                }, 5000);
+            }
+
+            // Função para obter cookie CSRF
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            // Validação formulário manual (código existente)
+            const manualForm = document.querySelector('#manual-method form');
+            const stringInput = document.getElementById('string');
+            const valorInput = document.getElementById('valor');
+
+            if (manualForm) {
+                manualForm.addEventListener('submit', function (e) {
+                    const codigo = stringInput.value.trim();
+                    const valor = valorInput.value;
+                    const tipoCombustivel = document.querySelector('input[name="tipo_combustivel"]:checked');
+
+                    if (!codigo) {
+                        e.preventDefault();
+                        alert('Por favor, digite ou escaneie um código.');
+                        stringInput.focus();
+                        return;
+                    }
+
+                    if (!tipoCombustivel) {
+                        e.preventDefault();
+                        alert('Por favor, selecione o tipo de combustível.');
+                        return;
+                    }
+
+                    if (valor && parseFloat(valor) <= 0) {
+                        e.preventDefault();
+                        alert('O valor deve ser maior que zero ou deixe em branco para consultar saldo.');
+                        valorInput.focus();
+                        return;
+                    }
+                });
+            }
+
+            // Auto focus inicial
+            setTimeout(() => {
+                if (document.querySelector('.method-tab.active').dataset.method === 'manual') {
+                    stringInput?.focus();
+                }
+            }, 100);
+
+            // Limpar formulário manual após sucesso
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('success') === '1') {
+                if (stringInput) stringInput.value = '';
+                if (valorInput) valorInput.value = '';
+                document.querySelectorAll('input[name="tipo_combustivel"]').forEach(radio => {
+                    radio.checked = false;
+                });
+                manualFuelOptions.forEach(option => option.classList.remove('selected'));
+                
+                setTimeout(() => {
+                    stringInput?.focus();
+                }, 100);
+            }
         });
     </script>
 </body>
