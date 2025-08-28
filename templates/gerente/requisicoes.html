@@ -6,47 +6,34 @@
 <style>
     /* Estilos para Estatísticas */
     .stats-container {
-        margin-top: 25px;
-    }
-
-    .stat-card {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 6px;
-        padding: 20px;
-    }
-
-    .stat-card h4 {
-        margin: 0 0 15px 0;
-        font-size: 1.1rem;
-        color: #495057;
+        margin-top: 20px;
     }
 
     .stats-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 15px;
+        gap: 10px;
     }
 
     .stat-item {
         text-align: center;
-        background: white;
-        padding: 15px;
+        background: #fafbfc;
+        padding: 12px;
         border-radius: 4px;
-        border: 1px solid #e9ecef;
+        border: 1px solid #e1e5e9;
     }
 
     .stat-number {
         display: block;
-        font-size: 1.8rem;
-        font-weight: bold;
-        color: #007bff;
-        margin-bottom: 5px;
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 2px;
     }
 
     .stat-label {
-        font-size: 0.9rem;
-        color: #6c757d;
+        font-size: 0.8rem;
+        color: #666;
     }
 
     /* Responsividade */
@@ -144,7 +131,7 @@
 </style>
 
 <div class="content-header">
-    <h2>Requisições</h2>
+    <h2></h2>
     <a href="{% url 'adicionar_requisicao' %}" class="btn-primary">
         + Nova Requisição
     </a>
@@ -153,7 +140,7 @@
 <!-- Requisições Table -->
 <div class="table-container">
     <div class="table-header">
-        <h3>Lista de Requisições ({{ requisicoes.count }} total)</h3>
+        <h3>Lista de Requisições de Senha ({{ requisicoes.count }} total)</h3>
         <div class="table-filters">
             <select class="filter-select" id="statusFilter" onchange="filterByStatus()">
                 <option value="">Todos os Status</option>
@@ -232,7 +219,7 @@
         </table>
         {% else %}
         <div class="empty-state">
-            <p>Nenhuma requisição cadastrada.</p>
+            <p>Nenhuma requisição de senha cadastrada.</p>
             <a href="{% url 'adicionar_requisicao' %}" class="btn-primary">
                 Criar Primeira Requisição
             </a>
@@ -241,28 +228,25 @@
     </div>
 </div>
 
-<!-- Estatísticas Rápidas -->
+<!-- Estatísticas -->
 {% if requisicoes %}
 <div class="stats-container">
-    <div class="stat-card">
-        <h4>Estatísticas</h4>
-        <div class="stats-grid">
-            <div class="stat-item">
-                <span class="stat-number">{{ requisicoes.count }}</span>
-                <span class="stat-label">Total de Requisições</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-number">{{ total_valor|default:0 }} MT</span>
-                <span class="stat-label">Valor Total</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-number">{{ total_senhas|default:0 }}</span>
-                <span class="stat-label">Total de Senhas</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-number">{{ senhas_restantes_total|default:0 }}</span>
-                <span class="stat-label">Senhas Restantes</span>
-            </div>
+    <div class="stats-grid">
+        <div class="stat-item">
+            <span class="stat-number">{{ requisicoes.count }}</span>
+            <span class="stat-label">Total de Requisições</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">{{ total_valor|default:0 }} MT</span>
+            <span class="stat-label">Valor Total</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">{{ total_senhas|default:0 }}</span>
+            <span class="stat-label">Total de Senhas</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">{{ senhas_restantes_total|default:0 }}</span>
+            <span class="stat-label">Senhas Restantes</span>
         </div>
     </div>
 </div>

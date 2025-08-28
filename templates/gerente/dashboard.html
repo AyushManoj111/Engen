@@ -5,69 +5,138 @@
 {% block content %}
 
 <style>
-/* Layout base */
-.dashboard-cards {
-    display: flex;
-    justify-content: center;
+/* Reset e base */
+* {
+    box-sizing: border-box;
+}
+
+/* Layout principal */
+.content-header {
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 1rem;
+}
+
+.content-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+/* Grid de estatísticas */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
     margin-bottom: 2rem;
 }
 
-.card {
-    background: linear-gradient(135deg, #004aad, #0077ff);
-    color: #fff;
-    padding: 2rem;
-    border-radius: 16px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    text-align: center;
-    font-size: 1.5rem;
-    font-weight: bold;
-}
-
-/* Estatísticas */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1.5rem;
-    padding: 1rem;
-    margin-top: 0; /* Remove margem extra do topo */
-}
-
 .stat-card {
-    background: #fff;
-    border-radius: 12px;
-    padding: 1.5rem;
-    text-align: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    cursor: pointer;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1.25rem;
+    transition: all 0.2s ease;
 }
 
 .stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    border-color: #d1d5db;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-/* Números */
+/* Números e labels */
 .stat-number {
-    font-size: 2.2rem;
-    font-weight: bold;
-    color: #004aad;
-    margin-bottom: 0.5rem;
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1;
+    margin-bottom: 0.25rem;
 }
 
-/* Labels */
 .stat-label {
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 500;
-    color: #555;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
 }
 
-/* Ajustes responsivos */
+.stat-sublabel {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: 0.25rem;
+    font-weight: 400;
+}
+
+/* Ícones minimalistas */
+.stat-icon {
+    font-size: 1.25rem;
+    color: #9ca3af;
+    margin-bottom: 0.75rem;
+    display: block;
+}
+
+/* Seção de gráficos */
+.charts-section {
+    margin-top: 0;
+}
+
+.charts-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    max-width: 100%;
+}
+
+.chart-container {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1.25rem;
+    height: 350px;
+}
+
+.chart-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 1rem 0;
+    text-align: left;
+}
+
+.chart-container canvas {
+    max-width: 100%;
+    max-height: 280px;
+}
+
+/* Container dos gráficos */
+.chart-wrapper {
+    position: relative;
+    height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Formatação de moeda */
+.currency {
+    font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Responsividade */
+@media (max-width: 1024px) {
+    .charts-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
 @media (max-width: 768px) {
     .stats-grid {
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 1rem;
-        padding: 0.5rem;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
     }
     
     .stat-card {
@@ -75,56 +144,273 @@
     }
     
     .stat-number {
-        font-size: 1.8rem;
+        font-size: 1.5rem;
     }
     
     .stat-label {
-        font-size: 0.9rem;
+        font-size: 0.8rem;
+    }
+    
+    .chart-container {
+        height: 300px;
+        padding: 1rem;
+    }
+    
+    .chart-wrapper {
+        height: 230px;
+    }
+    
+    .chart-container canvas {
+        max-height: 230px;
     }
 }
 
 @media (max-width: 480px) {
     .stats-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 0.75rem;
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
     }
     
-    .stat-number {
-        font-size: 1.6rem;
-    }
-    
-    .stat-label {
-        font-size: 0.85rem;
+    .content-header h2 {
+        font-size: 1.25rem;
     }
 }
 </style>
 
-<!-- Page Header -->
-<div class="content-header">
-    <h2>Dashboard</h2>
-</div>
-
 <!-- Statistics -->
 <div class="stats-grid">
+    <!-- Total Clientes -->
     <div class="stat-card">
-        <div class="stat-number">{{ total_funcionarios|default:"--" }}</div>
-        <div class="stat-label">Total Funcionários</div>
-    </div>
-    
-    <div class="stat-card">
+        <i class="fas fa-users stat-icon"></i>
         <div class="stat-number">{{ total_clientes|default:"--" }}</div>
         <div class="stat-label">Total Clientes</div>
     </div>
     
+    <!-- Total Requisições Abertas -->
     <div class="stat-card">
-        <div class="stat-number">{{ total_requisicoes|default:"--" }}</div>
-        <div class="stat-label">Total Requisições</div>
+        <i class="fas fa-clipboard-list stat-icon"></i>
+        <div class="stat-number">{{ total_requisicoes_abertas|default:"--" }}</div>
+        <div class="stat-label">Requisições Abertas</div>
+        <div class="stat-sublabel">
+            {{ requisicoes_senhas_abertas|default:"0" }} senhas • {{ requisicoes_saldo_abertas|default:"0" }} saldo
+        </div>
     </div>
     
+    <!-- Total Movimentos do Mês -->
     <div class="stat-card">
-        <div class="stat-number">{{ requisicoes_pendentes|default:"--" }}</div>
-        <div class="stat-label">Pendentes</div>
+        <i class="fas fa-chart-line stat-icon"></i>
+        <div class="stat-number currency">{{ total_movimentos_mes|floatformat:2|default:"0.00" }} MT</div>
+        <div class="stat-label">Movimentos</div>
+        <div class="stat-sublabel">{{ mes_atual|default:"Mês Atual" }}</div>
+    </div>
+    
+    <!-- Total Senhas Usadas no Mês -->
+    <div class="stat-card">
+        <i class="fas fa-key stat-icon"></i>
+        <div class="stat-number">{{ total_senhas_usadas_mes|default:"--" }}</div>
+        <div class="stat-label">Senhas Usadas</div>
+        <div class="stat-sublabel">{{ mes_atual|default:"Mês Atual" }}</div>
     </div>
 </div>
+
+<!-- Gráficos -->
+<div class="charts-section">
+    <div class="charts-container">
+        <!-- Gráfico de Formas de Pagamento -->
+        <div class="chart-container">
+            <h3 class="chart-title">Formas de Pagamento</h3>
+            <div class="chart-wrapper">
+                <canvas id="paymentChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Gráfico de Clientes com Mais Requisições -->
+        <div class="chart-container">
+            <h3 class="chart-title">Top Clientes</h3>
+            <div class="chart-wrapper">
+                <canvas id="clientsChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Load Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Dados do Django convertidos para JSON de forma segura
+    const labelsJson = '{{ formas_pagamento_labels|escapejs }}';
+    const dataJson = '{{ formas_pagamento_data|escapejs }}';
+    const colorsJson = '{{ formas_pagamento_colors|escapejs }}';
+    
+    let labels, data, colors;
+    
+    try {
+        labels = JSON.parse(labelsJson);
+        data = JSON.parse(dataJson);
+        colors = JSON.parse(colorsJson);
+    } catch (e) {
+        console.error('Erro ao parsear dados do gráfico:', e);
+        labels = [];
+        data = [];
+        colors = [];
+    }
+    
+    // Verificar se há dados válidos
+    if (!labels || labels.length === 0 || !data || data.length === 0) {
+        document.getElementById('paymentChart').style.display = 'none';
+        const container = document.querySelector('.chart-container');
+        container.innerHTML = '<div class="chart-title">Formas de Pagamento Mais Usadas</div><p style="text-align: center; color: #666; padding: 2rem;">Nenhum dado disponível</p>';
+        return;
+    }
+    
+    // Configuração do gráfico
+    const ctx = document.getElementById('paymentChart').getContext('2d');
+    
+    const paymentChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors,
+                borderColor: '#fff',
+                borderWidth: 2,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Gráfico de Clientes com Mais Requisições
+    const clientsLabelsJson = '{{ clientes_labels|escapejs }}';
+    const clientsDataJson = '{{ clientes_data|escapejs }}';
+    
+    let clientsLabels, clientsData;
+    
+    try {
+        clientsLabels = JSON.parse(clientsLabelsJson);
+        clientsData = JSON.parse(clientsDataJson);
+    } catch (e) {
+        console.error('Erro ao parsear dados do gráfico de clientes:', e);
+        clientsLabels = [];
+        clientsData = [];
+    }
+    
+    // Configurar gráfico de clientes
+    if (clientsLabels && clientsLabels.length > 0) {
+        const ctxClients = document.getElementById('clientsChart').getContext('2d');
+        
+        const clientsChart = new Chart(ctxClients, {
+            type: 'bar',
+            data: {
+                labels: clientsLabels,
+                datasets: [{
+                    label: 'Requisições',
+                    data: clientsData,
+                    backgroundColor: '#1e3a8a',
+                    borderColor: '#1e40af',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: '#374151',
+                        titleColor: '#f9fafb',
+                        bodyColor: '#f9fafb',
+                        borderColor: '#d1d5db',
+                        borderWidth: 1,
+                        cornerRadius: 6,
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y + ' requisições';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 0,
+                            font: {
+                                size: 10,
+                                family: 'SF Pro Text, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif'
+                            },
+                            color: '#6b7280'
+                        },
+                        grid: {
+                            display: false
+                        },
+                        border: {
+                            color: '#e5e7eb'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            font: {
+                                size: 10
+                            },
+                            color: '#6b7280'
+                        },
+                        grid: {
+                            color: '#f3f4f6'
+                        },
+                        border: {
+                            color: '#e5e7eb'
+                        }
+                    }
+                },
+                layout: {
+                    padding: {
+                        top: 5,
+                        bottom: 5
+                    }
+                }
+            }
+        });
+    } else {
+        // Mostrar mensagem se não há dados
+        document.getElementById('clientsChart').style.display = 'none';
+        const clientsContainer = document.querySelector('.chart-container:last-child');
+        clientsContainer.innerHTML = '<div class="chart-title">Top Clientes</div><p style="text-align: center; color: #9ca3af; padding: 2rem; font-size: 0.875rem;">Nenhum dado disponível</p>';
+    }
+});
+</script>
 
 {% endblock %}

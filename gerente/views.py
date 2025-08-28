@@ -23,6 +23,7 @@ from xhtml2pdf import pisa
 from decimal import Decimal, InvalidOperation
 from itertools import chain
 from operator import attrgetter
+import json
 
 try:
     from reportlab.pdfgen import canvas
@@ -69,25 +70,142 @@ def login_gerente_view(request):
 
 @user_passes_test(is_gerente, login_url='/login/')
 def dashboard_view(request):
-   empresa = get_empresa_usuario(request.user)
-   if not empresa:
-       messages.error(request, 'Empresa não encontrada.')
-       return redirect('login')
-   
-   total_funcionarios = Funcionario.objects.filter(empresa=empresa).count()
-   total_clientes = Cliente.objects.filter(empresa=empresa).count()
-   total_requisicoes = RequisicaoSenhas.objects.filter(empresa=empresa).count()
+    empresa = get_empresa_usuario(request.user)
+    if not empresa:
+        messages.error(request, 'Empresa não encontrada.')
+        return redirect('login')
+    
+    # Total de clientes
+    total_clientes = Cliente.objects.filter(empresa=empresa).count()
+    
+    # Total de requisições abertas (senhas + saldo)
+    requisicoes_senhas_abertas = RequisicaoSenhas.objects.filter(
+        empresa=empresa, 
+        fecho__isnull=True
+    ).count()
+    
+    requisicoes_saldo_abertas = RequisicaoSaldo.objects.filter(
+        empresa=empresa,
+        fecho__isnull=True
+    ).count()
+    
+    total_requisicoes_abertas = requisicoes_senhas_abertas + requisicoes_saldo_abertas
+    
+    # Total valor de movimentos do mês atual
+    hoje = timezone.now()
+    inicio_mes = datetime(hoje.year, hoje.month, 1)
+    fim_mes = datetime(hoje.year, hoje.month + 1, 1) if hoje.month < 12 else datetime(hoje.year + 1, 1, 1)
+    
+    total_movimentos_mes = Movimento.objects.filter(
+        requisicao_saldo__empresa=empresa,
+        data_criacao__gte=inicio_mes,
+        data_criacao__lt=fim_mes
+    ).aggregate(total=Sum('valor'))['total'] or 0
+    
+    # Total de senhas usadas no mês atual
+    total_senhas_usadas_mes = Senha.objects.filter(
+        empresa=empresa,
+        usada=True,
+        data_uso__gte=inicio_mes,
+        data_uso__lt=fim_mes
+    ).count()
 
-   requisicoes = RequisicaoSenhas.objects.filter(empresa=empresa).prefetch_related('lista_senhas')
-   requisicoes_pendentes = sum(1 for r in requisicoes if r.senhas_restantes > 0)
+    # Dados para gráfico de formas de pagamento
+    # Contar requisições de senhas por forma de pagamento
+    formas_pagamento_senhas = RequisicaoSenhas.objects.filter(
+        empresa=empresa
+    ).values('forma_pagamento').annotate(
+        count=models.Count('id')
+    )
+    
+    # Contar requisições de saldo por forma de pagamento
+    formas_pagamento_saldo = RequisicaoSaldo.objects.filter(
+        empresa=empresa
+    ).values('forma_pagamento').annotate(
+        count=models.Count('id')
+    )
+    
+    # Consolidar dados de formas de pagamento
+    pagamentos_consolidados = {}
+    
+    # Adicionar dados de senhas
+    for item in formas_pagamento_senhas:
+        forma = item['forma_pagamento']
+        pagamentos_consolidados[forma] = pagamentos_consolidados.get(forma, 0) + item['count']
+    
+    # Adicionar dados de saldo
+    for item in formas_pagamento_saldo:
+        forma = item['forma_pagamento']
+        pagamentos_consolidados[forma] = pagamentos_consolidados.get(forma, 0) + item['count']
+    
+    # Preparar dados para o gráfico
+    formas_pagamento_labels = []
+    formas_pagamento_data = []
+    formas_pagamento_colors = []
+    
+    # Mapeamento de cores e labels
+    pagamento_info = {
+        'cash': {'label': 'Dinheiro (Cash)', 'color': '#28a745'},
+        'transferencia': {'label': 'Transferência', 'color': '#007bff'},
+        'pos': {'label': 'POS (Cartão)', 'color': '#ffc107'},
+    }
+    
+    for forma, count in pagamentos_consolidados.items():
+        info = pagamento_info.get(forma, {'label': forma.title(), 'color': '#6c757d'})
+        formas_pagamento_labels.append(info['label'])
+        formas_pagamento_data.append(count)
+        formas_pagamento_colors.append(info['color'])
 
-   context = {
-       'total_funcionarios': total_funcionarios,
-       'total_clientes': total_clientes,
-       'total_requisicoes': total_requisicoes,
-       'requisicoes_pendentes': requisicoes_pendentes,
-   }
-   return render(request, 'gerente/dashboard.html', context)
+    # Dados para gráfico de clientes com mais requisições
+    # Contar requisições de senhas por cliente
+    requisicoes_senhas_por_cliente = RequisicaoSenhas.objects.filter(
+        empresa=empresa
+    ).values('cliente__nome').annotate(
+        count=models.Count('id')
+    )
+    
+    # Contar requisições de saldo por cliente
+    requisicoes_saldo_por_cliente = RequisicaoSaldo.objects.filter(
+        empresa=empresa
+    ).values('cliente__nome').annotate(
+        count=models.Count('id')
+    )
+    
+    # Consolidar dados por cliente
+    clientes_consolidados = {}
+    
+    # Adicionar dados de senhas
+    for item in requisicoes_senhas_por_cliente:
+        cliente = item['cliente__nome']
+        clientes_consolidados[cliente] = clientes_consolidados.get(cliente, 0) + item['count']
+    
+    # Adicionar dados de saldo
+    for item in requisicoes_saldo_por_cliente:
+        cliente = item['cliente__nome']
+        clientes_consolidados[cliente] = clientes_consolidados.get(cliente, 0) + item['count']
+    
+    # Ordenar clientes por número de requisições (top 10)
+    clientes_ordenados = sorted(clientes_consolidados.items(), key=lambda x: x[1], reverse=True)[:10]
+    
+    # Preparar dados para o gráfico
+    clientes_labels = [cliente[0] for cliente in clientes_ordenados]
+    clientes_data = [cliente[1] for cliente in clientes_ordenados]
+
+    context = {
+        'total_clientes': total_clientes,
+        'total_requisicoes_abertas': total_requisicoes_abertas,
+        'requisicoes_senhas_abertas': requisicoes_senhas_abertas,
+        'requisicoes_saldo_abertas': requisicoes_saldo_abertas,
+        'total_movimentos_mes': total_movimentos_mes,
+        'total_senhas_usadas_mes': total_senhas_usadas_mes,
+        'mes_atual': hoje.strftime('%B %Y'),
+        'formas_pagamento_labels': json.dumps(formas_pagamento_labels),
+        'formas_pagamento_data': json.dumps(formas_pagamento_data),
+        'formas_pagamento_colors': json.dumps(formas_pagamento_colors),
+        'clientes_labels': json.dumps(clientes_labels),
+        'clientes_data': json.dumps(clientes_data),
+    }
+    return render(request, 'gerente/dashboard.html', context)
 
 def logout_view(request):
   """View para logout"""
