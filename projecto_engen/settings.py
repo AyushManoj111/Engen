@@ -136,6 +136,9 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Sessões expiram em 1 hora
+SESSION_COOKIE_AGE = 3600  # 1 hora em segundos
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # mantém sessão mesmo se fechar o browser
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
