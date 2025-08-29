@@ -72,7 +72,7 @@ def login_gerente_view(request):
    
    return render(request, 'gerente/login.html')
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def dashboard_view(request):
     empresa = get_empresa_usuario(request.user)
     if not empresa:
@@ -224,7 +224,7 @@ def home_view(request):
 # VIEWS DE FUNCIONÁRIOS
 # ================================
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def funcionarios(request):
    """Lista todos os funcionários"""
    empresa = get_empresa_usuario(request.user)
@@ -249,7 +249,7 @@ def funcionarios(request):
    }
    return render(request, 'gerente/funcionarios.html', context)
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def adicionar_funcionario(request):
    """Adicionar novo funcionário"""
    empresa = get_empresa_usuario(request.user)
@@ -305,7 +305,7 @@ def adicionar_funcionario(request):
    
    return render(request, 'gerente/adicionar_funcionario.html')
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def editar_funcionario(request, funcionario_id):
    """Editar funcionário existente"""
    empresa = get_empresa_usuario(request.user)
@@ -356,7 +356,7 @@ def editar_funcionario(request, funcionario_id):
    
    return render(request, 'gerente/editar_funcionario.html', {'funcionario': funcionario})
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def deletar_funcionario(request, funcionario_id):
    """Deletar funcionário (soft delete)"""
    empresa = get_empresa_usuario(request.user)
@@ -379,7 +379,7 @@ def deletar_funcionario(request, funcionario_id):
 # VIEWS DE CLIENTES
 # ================================
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def clientes(request):
     """Lista todos os clientes"""
     empresa = get_empresa_usuario(request.user)
@@ -410,7 +410,7 @@ def clientes(request):
     }
     return render(request, 'gerente/clientes.html', context)
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def adicionar_cliente(request):
    """Adicionar novo cliente"""
    empresa = get_empresa_usuario(request.user)
@@ -447,7 +447,7 @@ def adicionar_cliente(request):
    
    return render(request, 'gerente/adicionar_cliente.html')
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def editar_cliente(request, cliente_id):
    """Editar cliente existente"""
    empresa = get_empresa_usuario(request.user)
@@ -484,7 +484,7 @@ def editar_cliente(request, cliente_id):
    
    return render(request, 'gerente/editar_cliente.html', {'cliente': cliente})
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def deletar_cliente(request, cliente_id):
    """Deletar cliente"""
    empresa = get_empresa_usuario(request.user)
@@ -508,7 +508,7 @@ def deletar_cliente(request, cliente_id):
    
    return redirect('clientes')
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def extrato_cliente(request, cliente_id):
     """Extrato que só mostra dados que passaram por fecho - CORRIGIDO COM SENHAS E COMBUSTÍVEL PARA AMBOS"""
     cliente = get_object_or_404(Cliente, id=cliente_id)
@@ -755,7 +755,7 @@ def extrato_cliente(request, cliente_id):
 # VIEWS DE REQUISIÇÕES SENHA
 # ================================
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def requisicoes(request):
     """Lista todas as requisições - Modificada para incluir dados do fecho"""
     empresa = get_empresa_usuario(request.user)
@@ -814,7 +814,7 @@ def requisicoes(request):
     }
     return render(request, 'gerente/requisicoes.html', context)
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def adicionar_requisicao(request):
     """Adicionar nova requisição"""
     empresa = get_empresa_usuario(request.user)
@@ -904,7 +904,7 @@ def adicionar_requisicao(request):
         'mostrar_recibo': False
     })
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def editar_requisicao(request, requisicao_id):
     """Editar requisição existente - Modificada para verificar fecho"""
     empresa = get_empresa_usuario(request.user)
@@ -1017,7 +1017,7 @@ def editar_requisicao(request, requisicao_id):
     }
     return render(request, 'gerente/editar_requisicao.html', context)
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def deletar_requisicao(request, requisicao_id):
     """Deletar requisição (soft delete) - Modificada para verificar fecho"""
     empresa = get_empresa_usuario(request.user)
@@ -1041,7 +1041,7 @@ def deletar_requisicao(request, requisicao_id):
     
     return redirect('requisicoes')
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def ver_senhas(request, requisicao_id):
     """
     View original atualizada para incluir contagem de senhas disponíveis
@@ -1069,7 +1069,7 @@ def ver_senhas(request, requisicao_id):
 # VIEWS DE REQUISIÇÕES SALDO
 # ================================
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def requisicoes_saldo(request):
     """Lista todas as requisições de saldo - Modificada para incluir dados do fecho"""
     empresa = get_empresa_usuario(request.user)
@@ -1127,7 +1127,7 @@ def requisicoes_saldo(request):
     }
     return render(request, 'gerente/requisicoes_saldo.html', context)
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def adicionar_requisicao_saldo(request, cliente_id=None):
     """View para adicionar nova requisição de saldo"""
     if request.method == 'POST':
@@ -1260,7 +1260,7 @@ def adicionar_requisicao_saldo(request, cliente_id=None):
         })
 
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def editar_requisicao_saldo(request, requisicao_id):
     """Editar requisição de saldo existente - Modificada para verificar fecho"""
     empresa = get_empresa_usuario(request.user)
@@ -1344,7 +1344,7 @@ def editar_requisicao_saldo(request, requisicao_id):
     }
     return render(request, 'gerente/editar_req_saldo.html', context)
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def deletar_requisicao_saldo(request, requisicao_id):
     """Deletar requisição de saldo (soft delete) - Modificada para verificar fecho"""
     empresa = get_empresa_usuario(request.user)
@@ -1372,7 +1372,7 @@ def deletar_requisicao_saldo(request, requisicao_id):
 # VIEWS ADICIONAIS (Recibos, Extratos, Fecho, etc)
 # ================================================
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def dashboard(request):
    """Dashboard principal com estatísticas"""
    empresa = get_empresa_usuario(request.user)
@@ -1424,7 +1424,7 @@ def dashboard(request):
    }
    return render(request, 'gerente/dashboard.html', context)
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def requisicoes_cliente(request, cliente_id):
    """Lista todas as requisições de um cliente específico"""
    empresa = get_empresa_usuario(request.user)
@@ -1446,7 +1446,7 @@ def requisicoes_cliente(request, cliente_id):
    }
    return render(request, 'gerente/requisicoes_cliente.html', context)
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def imprimir_qr_codes(request, requisicao_id):
     """
     Gera e exibe QR Codes para todas as senhas não usadas de uma requisição
@@ -1474,7 +1474,7 @@ def imprimir_qr_codes(request, requisicao_id):
     
     return render(request, 'gerente/qr_codes.html', context)
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def imprimir_qr_codes_saldo(request, requisicao_id):
     """
     Gera e exibe QR Codes para todas as transações de uma requisição de saldo
@@ -1527,7 +1527,7 @@ def gerar_qr_code(texto):
     return qr_code_base64
 
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def gerar_recibo_pdf(request, requisicao_id):
     """View para gerar PDF do recibo usando xhtml2pdf"""
     try:
@@ -1813,7 +1813,7 @@ def gerar_recibo_pdf(request, requisicao_id):
         messages.error(request, f'Erro ao gerar PDF: {str(e)}')
         return redirect('requisicoes')
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def gerar_recibo_saldo_pdf(request, requisicao_id):
     """View para gerar PDF do recibo de requisição de saldo usando xhtml2pdf"""
     try:
@@ -2102,7 +2102,7 @@ def gerar_recibo_saldo_pdf(request, requisicao_id):
         messages.error(request, f'Erro ao gerar PDF: {str(e)}')
         return redirect('requisicoes_saldo')
     
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def fecho(request):
     empresa = get_empresa_usuario(request.user)
     if not empresa:
@@ -2116,7 +2116,7 @@ def fecho(request):
     }
     return render(request, 'gerente/fecho.html', context)
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def fazer_fecho(request):
     """Realizar o fecho - marca TODOS os movimentos (receitas e débitos) como fechados"""
     empresa = get_empresa_usuario(request.user)
@@ -2236,7 +2236,7 @@ def fazer_fecho(request):
 # ================================
 # FUNÇÃO AUXILIAR PARA VERIFICAR SE PODE EDITAR/EXCLUIR
 # ================================
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def pode_editar_requisicao(requisicao):
     """
     Função auxiliar para verificar se uma requisição pode ser editada/excluída
@@ -2244,7 +2244,7 @@ def pode_editar_requisicao(requisicao):
     """
     return requisicao.fecho is None
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def pode_editar_requisicao_saldo(requisicao_saldo):
     """
     Função auxiliar para verificar se uma requisição de saldo pode ser editada/excluída
@@ -2252,7 +2252,7 @@ def pode_editar_requisicao_saldo(requisicao_saldo):
     """
     return requisicao_saldo.fecho is None
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def preview_fecho(request):
     """View para visualizar o que será fechado antes de confirmar - INCLUINDO DÉBITOS"""
     empresa = get_empresa_usuario(request.user)
@@ -2362,7 +2362,7 @@ def verificar_edicao_requisicao_saldo(sender, instance, **kwargs):
 # VIEWS AJAX
 # ================================
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def ajax_pode_editar_requisicao(request, requisicao_id):
     """AJAX para verificar se uma requisição pode ser editada"""
     try:
@@ -2384,7 +2384,7 @@ def ajax_pode_editar_requisicao(request, requisicao_id):
     except Exception as e:
         return JsonResponse({'pode_editar': False, 'motivo': str(e)})
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def ajax_cliente_info(request, cliente_id):
    """Retorna informações do cliente em JSON"""
    try:
@@ -2413,7 +2413,7 @@ def ajax_cliente_info(request, cliente_id):
 
 from functools import wraps
 
-@user_passes_test(is_gerente, login_url='/login/')
+@user_passes_test(is_gerente, login_url='gerente/login/')
 def verificar_fecho_requisicao(model_class, redirect_url):
     """
     Decorador para verificar se uma requisição pode ser editada/excluída

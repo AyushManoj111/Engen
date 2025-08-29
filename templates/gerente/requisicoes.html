@@ -3,254 +3,128 @@
 {% block title %}Requisições - ENGEN{% endblock %}
 
 {% block content %}
-<style>
-    /* Estilos para Estatísticas */
-    .stats-container {
-        margin-top: 20px;
-    }
 
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 10px;
-    }
-
-    .stat-item {
-        text-align: center;
-        background: #fafbfc;
-        padding: 12px;
-        border-radius: 4px;
-        border: 1px solid #e1e5e9;
-    }
-
-    .stat-number {
-        display: block;
-        font-size: 1.4rem;
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 2px;
-    }
-
-    .stat-label {
-        font-size: 0.8rem;
-        color: #666;
-    }
-
-    /* Responsividade */
-    @media (max-width: 768px) {
-        .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (max-width: 480px) {
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    /* Botão Ver Senhas */
-    .btn-view {
-        background: linear-gradient(135deg, #3498db, #2980b9);
-        color: white;
-        border: none;
-        padding: 8px 12px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 500;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
-        min-width: 90px;
-        justify-content: center;
-    }
-
-    .btn-view:hover {
-        background: linear-gradient(135deg, #2980b9, #21618c);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
-        color: white;
-        text-decoration: none;
-    }
-
-    .btn-view:active {
-        transform: translateY(0);
-    }
-
-    .btn-view:focus {
-        outline: none;
-        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.25);
-    }
-
-    /* Estilos para Fecho */
-    .fecho-badge {
-        padding: 4px 8px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .fecho-fechado {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-    }
-
-    .fecho-aberto {
-        background: #fff3cd;
-        color: #856404;
-        border: 1px solid #ffeaa7;
-    }
-
-    /* Linha desabilitada para itens fechados */
-    .row-fechado {
-        opacity: 0.7;
-        background-color: #f8f9fa !important;
-    }
-
-    /* Botões desabilitados */
-    .btn-disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        pointer-events: none;
-    }
-
-    @media (max-width: 768px) {
-        .btn-view {
-            font-size: 11px;
-            padding: 6px 10px;
-            min-width: 80px;
-        }
-    }
-</style>
-
-<div class="content-header">
-    <h2></h2>
-    <a href="{% url 'adicionar_requisicao' %}" class="btn-primary">
-        + Nova Requisição
-    </a>
-</div>
-
-<!-- Requisições Table -->
-<div class="table-container">
-    <div class="table-header">
-        <h3>Lista de Requisições de Senha ({{ requisicoes.count }} total)</h3>
-        <div class="table-filters">
-            <select class="filter-select" id="statusFilter" onchange="filterByStatus()">
-                <option value="">Todos os Status</option>
-                <option value="completo">Concluídas</option>
-                <option value="baixo">Poucas Senhas</option>
-                <option value="medio">Em Andamento</option>
-                <option value="alto">Recentes</option>
-            </select>
-            <select class="filter-select" id="fechoFilter" onchange="filterByFecho()">
-                <option value="">Todos os Fechos</option>
-                <option value="fechado">Fechadas</option>
-                <option value="aberto">Abertas</option>
-            </select>
-        </div>
+<div class="adicionar-content">
+    <div class="content-header">
+        <h2></h2>
+        <a href="{% url 'adicionar_requisicao' %}" class="btn-primary">
+            + Nova Requisição
+        </a>
     </div>
-    <div class="table-wrapper">
-        {% if requisicoes %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Cliente</th>
-                    <th>Valor</th>
-                    <th>Senhas</th>
-                    <th>Senhas Restantes</th>
-                    <th>Fecho</th>
-                    <th>Data Criação</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for requisicao in requisicoes %}
-                <tr
-                    class="{% if requisicao.fecho %}row-fechado{% endif %}"
-                    data-status="{% if requisicao.senhas_restantes == 0 %}completo{% elif requisicao.senhas_restantes <= 5 %}baixo{% elif requisicao.senhas_restantes <= 15 %}medio{% else %}alto{% endif %}"
-                    data-fecho="{% if requisicao.fecho %}fechado{% else %}aberto{% endif %}">
-                    <td>{{ requisicao.cliente.nome }}</td>
-                    <td class="valor-cell">{{ requisicao.valor }} MT</td>
-                    <td>
-                        <span class="senhas-badge">{{ requisicao.senhas }}</span>
-                    </td>
-                    <td>
-                        <span
-                            class="senhas-restante {% if requisicao.senhas_restantes == 0 %}completo{% elif requisicao.senhas_restantes <= 5 %}baixo{% elif requisicao.senhas_restantes <= 15 %}medio{% else %}alto{% endif %}">
-                            {{ requisicao.senhas_restantes }}
-                        </span>
-                    </td>
-                    <td>
-                        {% if requisicao.fecho %}
-                            <span class="fecho-badge fecho-fechado" title="Fechado em {{ requisicao.fecho.data|date:'d/m/Y H:i' }}">
-                                Fecho #{{ requisicao.fecho.id }}
+
+    <!-- Requisições Table -->
+    <div class="table-container">
+        <div class="table-header">
+            <h3>Lista de Requisições de Senha ({{ requisicoes.count }} total)</h3>
+            <div class="table-filters">
+                <select class="filter-select" id="statusFilter" onchange="filterByStatus()">
+                    <option value="">Todos os Status</option>
+                    <option value="completo">Concluídas</option>
+                    <option value="baixo">Poucas Senhas</option>
+                    <option value="medio">Em Andamento</option>
+                    <option value="alto">Recentes</option>
+                </select>
+                <select class="filter-select" id="fechoFilter" onchange="filterByFecho()">
+                    <option value="">Todos os Fechos</option>
+                    <option value="fechado">Fechadas</option>
+                    <option value="aberto">Abertas</option>
+                </select>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            {% if requisicoes %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Valor</th>
+                        <th>Senhas</th>
+                        <th>Restantes</th>
+                        <th>Fecho</th>
+                        <th>Data</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for requisicao in requisicoes %}
+                    <tr
+                        class="{% if requisicao.fecho %}row-fechado{% endif %}"
+                        data-status="{% if requisicao.senhas_restantes == 0 %}completo{% elif requisicao.senhas_restantes <= 5 %}baixo{% elif requisicao.senhas_restantes <= 15 %}medio{% else %}alto{% endif %}"
+                        data-fecho="{% if requisicao.fecho %}fechado{% else %}aberto{% endif %}">
+                        <td class="truncate">{{ requisicao.cliente.nome }}</td>
+                        <td class="valor-cell">{{ requisicao.valor }} MT</td>
+                        <td>
+                            <span class="senhas-badge">{{ requisicao.senhas }}</span>
+                        </td>
+                        <td>
+                            <span
+                                class="senhas-restante {% if requisicao.senhas_restantes == 0 %}completo{% elif requisicao.senhas_restantes <= 5 %}baixo{% elif requisicao.senhas_restantes <= 15 %}medio{% else %}alto{% endif %}">
+                                {{ requisicao.senhas_restantes }}
                             </span>
-                        {% else %}
-                            <span class="fecho-badge fecho-aberto">
-                                Aberto
-                            </span>
-                        {% endif %}
-                    </td>
-                    <td>{{ requisicao.data_criacao|date:"d/m/Y" }}</td>
-                    <td class="actions-cell">
-                        {% if requisicao.fecho %}
-                            <!-- Requisições fechadas - apenas visualizar senhas -->
-                            <span class="btn-action btn-disabled" title="Não é possível editar requisições fechadas">Editar</span>
-                            <span class="btn-action btn-disabled" title="Não é possível excluir requisições fechadas">Excluir</span>
-                            <a href="{% url 'ver_senhas' requisicao.id %}" class="btn-action btn-view">Ver Senhas</a>
-                        {% else %}
-                            <!-- Requisições abertas - todas as ações disponíveis -->
-                            <a href="{% url 'editar_requisicao' requisicao.id %}" class="btn-action btn-edit">Editar</a>
-                            <a href="{% url 'deletar_requisicao' requisicao.id %}" class="btn-action btn-delete"
-                                onclick="return confirm('Tem certeza que deseja excluir esta requisição?')">Excluir</a>
-                            <a href="{% url 'ver_senhas' requisicao.id %}" class="btn-action btn-view">Ver Senhas</a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="empty-state">
-            <p>Nenhuma requisição de senha cadastrada.</p>
-            <a href="{% url 'adicionar_requisicao' %}" class="btn-primary">
-                Criar Primeira Requisição
-            </a>
+                        </td>
+                        <td>
+                            {% if requisicao.fecho %}
+                                <span class="fecho-badge fecho-fechado" title="Fechado em {{ requisicao.fecho.data|date:'d/m/Y H:i' }}">
+                                    #{{ requisicao.fecho.id }}
+                                </span>
+                            {% else %}
+                                <span class="fecho-badge fecho-aberto">
+                                    Aberto
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>{{ requisicao.data_criacao|date:"d/m/Y" }}</td>
+                        <td class="actions-cell">
+                            {% if requisicao.fecho %}
+                                <span class="btn-action btn-disabled" title="Não é possível editar requisições fechadas">Editar</span>
+                                <span class="btn-action btn-disabled" title="Não é possível excluir requisições fechadas">Excluir</span>
+                                <a href="{% url 'ver_senhas' requisicao.id %}" class="btn-action btn-view">Ver Senhas</a>
+                            {% else %}
+                                <a href="{% url 'editar_requisicao' requisicao.id %}" class="btn-action btn-edit">Editar</a>
+                                <a href="{% url 'deletar_requisicao' requisicao.id %}" class="btn-action btn-delete"
+                                    onclick="return confirm('Tem certeza que deseja excluir esta requisição?')">Excluir</a>
+                                <a href="{% url 'ver_senhas' requisicao.id %}" class="btn-action btn-view">Ver Senhas</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <p>Nenhuma requisição de senha cadastrada.</p>
+                <a href="{% url 'adicionar_requisicao' %}" class="btn-primary">
+                    Criar Primeira Requisição
+                </a>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
-</div>
 
-<!-- Estatísticas -->
-{% if requisicoes %}
-<div class="stats-container">
-    <div class="stats-grid">
-        <div class="stat-item">
-            <span class="stat-number">{{ requisicoes.count }}</span>
-            <span class="stat-label">Total de Requisições</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-number">{{ total_valor|default:0 }} MT</span>
-            <span class="stat-label">Valor Total</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-number">{{ total_senhas|default:0 }}</span>
-            <span class="stat-label">Total de Senhas</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-number">{{ senhas_restantes_total|default:0 }}</span>
-            <span class="stat-label">Senhas Restantes</span>
+    <!-- Estatísticas -->
+    {% if requisicoes %}
+    <div class="stats-container">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-number">{{ requisicoes.count }}</span>
+                <span class="stat-label">Requisições</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ total_valor|default:0 }} MT</span>
+                <span class="stat-label">Valor Total</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ total_senhas|default:0 }}</span>
+                <span class="stat-label">Total Senhas</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ senhas_restantes_total|default:0 }}</span>
+                <span class="stat-label">Restantes</span>
+            </div>
         </div>
     </div>
+    {% endif %}
 </div>
-{% endif %}
 
 <script>
     function filterByStatus() {

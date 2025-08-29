@@ -3,77 +3,61 @@
 {% block title %}Clientes - ENGEN{% endblock %}
 
 {% block content %}
-<style>
-    .btn-action.btn-view {
-        background-color: #17a2b8;
-        color: white;
-        padding: 4px 8px;
-        border: none;
-        border-radius: 3px;
-        text-decoration: none;
-        font-size: 0.8rem;
-        margin-right: 5px;
-    }
-    .btn-action.btn-view:hover {
-        background-color: #138496;
-        text-decoration: none;
-        color: white;
-    }
-</style>
 
-<div class="content-header">
-    <h2></h2>
-    <a href="{% url 'adicionar_cliente' %}" class="btn-primary">
-        + Adicionar Cliente
-    </a>
-</div>
-
-<!-- Clientes Table -->
-<div class="table-container">
-    <div class="table-header">
-        <h3>Lista de Clientes ({{ clientes.count }} total)</h3>
+<div class="clientes-content">
+    <div class="content-header">
+        <h2></h2>
+        <a href="{% url 'adicionar_cliente' %}" class="btn-primary">
+            + Adicionar Cliente
+        </a>
     </div>
-    <div class="table-wrapper">
-        {% if clientes %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Contacto</th>
-                    <th>Endereço</th>
-                    <th>Requisições Totais</th>
-                    <th>Data Criação</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for cliente in clientes %}
-                <tr>
-                    <td>{{ cliente.nome }}</td>
-                    <td>{{ cliente.contacto|default:"N/A" }}</td>
-                    <td>{{ cliente.endereco|default:"N/A" }}</td>
-                    <td>
-                        <span class="requisicoes-badge">{{ cliente.total_requisicoes }}</span>
-                    </td>
-                    <td>{{ cliente.data_criacao|date:"d/m/Y" }}</td>
-                    <td class="actions-cell">
-                        <a href="{% url 'extrato_cliente' cliente.id %}" class="btn-action btn-view">Extrato</a>
-                        <a href="{% url 'editar_cliente' cliente.id %}" class="btn-action btn-edit">Editar</a>
-                        <a href="{% url 'deletar_cliente' cliente.id %}" class="btn-action btn-delete"
-                            onclick="return confirm('Tem certeza que deseja excluir {{ cliente.nome }}?')">Excluir</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="empty-state">
-            <p>Nenhum cliente cadastrado.</p>
-            <a href="{% url 'adicionar_cliente' %}" class="btn-primary">
-                Adicionar Primeiro Cliente
-            </a>
+
+    <!-- Clientes Table -->
+    <div class="table-container">
+        <div class="table-header">
+            <h3>Lista de Clientes ({{ clientes.count }} total)</h3>
         </div>
-        {% endif %}
+        <div class="table-wrapper">
+            {% if clientes %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Contacto</th>
+                        <th>Endereço</th>
+                        <th>Data Criação</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cliente in clientes %}
+                    <tr>
+                        <td>{{ cliente.nome }}</td>
+                        <td>{{ cliente.contacto|default:"N/A" }}</td>
+                        <td class="truncate">{{ cliente.endereco|default:"N/A" }}</td>
+                        <td>{{ cliente.data_criacao|date:"d/m/Y" }}</td>
+                        <td class="actions-cell">
+                            <a href="{% url 'extrato_cliente' cliente.id %}" 
+                               class="btn-action btn-view">Extrato</a>
+                            <a href="{% url 'editar_cliente' cliente.id %}" 
+                               class="btn-action btn-edit">Editar</a>
+                            <a href="{% url 'deletar_cliente' cliente.id %}" 
+                               class="btn-action btn-delete"
+                               onclick="return confirm('Tem certeza que deseja excluir {{ cliente.nome }}?')">Excluir</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <p>Nenhum cliente cadastrado.</p>
+                <a href="{% url 'adicionar_cliente' %}" class="btn-primary">
+                    Adicionar Primeiro Cliente
+                </a>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -33,7 +33,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1" 
 ]
 
-LOGIN_URL = '/login/'
+LOGIN_URL = '/'
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),  # pasta global de arquivos estáticos

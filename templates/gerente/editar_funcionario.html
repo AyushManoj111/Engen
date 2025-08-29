@@ -3,83 +3,97 @@
 {% block title %}Editar Funcionário - ENGEN{% endblock %}
 
 {% block content %}
-<div class="content-header">
-    <h2>Editar Funcionário</h2>
-    <a href="{% url 'funcionarios' %}" class="btn-secondary">
-        ← Voltar
-    </a>
-</div>
 
-<div class="form-container">
-    <div class="form-card">
-        <div class="form-header">
-            <h3>Editar: {{ funcionario.nome }}</h3>
+<div class="editar-funcionario-content">
+    <div class="content-header">
+        <div>
+            <div class="breadcrumb">
+                <span>Funcionários</span>
+                <span>→</span>
+                <span>Editar</span>
+                <span>→</span>
+                <span>{{ funcionario.nome }}</span>
+            </div>
+            <h2>Editar Funcionário</h2>
         </div>
-        
-        <form method="post" action="{% url 'editar_funcionario' funcionario.id %}">
-            {% csrf_token %}
-            
-            <div class="form-body">
-                <div class="form-group">
-                    <label for="nome">Nome <span class="required">*</span></label>
-                    <input type="text" class="form-control" id="nome" name="nome" 
-                           value="{{ funcionario.nome }}" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="email">Email <span class="required">*</span></label>
-                    <input type="email" class="form-control" id="email" name="email" 
-                           value="{{ funcionario.email }}" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Password <span class="required">*</span></label>
-                    <input type="password" class="form-control" id="password" name="password" 
-                           value="{{ funcionario.password }}" required>
-                    <small class="form-text">Deixe em branco para manter a senha atual</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="contacto">Contacto</label>
-                    <input type="tel" class="form-control" id="contacto" name="contacto"
-                           value="{{ funcionario.contacto|default:'' }}"
-                           placeholder="+258 XX XXX XXXX">
-                </div>
-
-                <div class="form-group">
-                    <label for="morada">Morada</label>
-                    <textarea class="form-control" id="morada" name="morada" rows="3"
-                              placeholder="Digite o endereço completo">{{ funcionario.morada|default:'' }}</textarea>
-                </div>
-            </div>
-
-            <div class="form-footer">
-                <a href="{% url 'funcionarios' %}" class="btn-secondary">Cancelar</a>
-                <button type="submit" class="btn-submit">Atualizar Funcionário</button>
-            </div>
-        </form>
+        <a href="{% url 'funcionarios' %}" class="btn-secondary">
+            ← Voltar à Lista
+        </a>
     </div>
-</div>
 
-<!-- Informações Adicionais -->
-<div class="info-section">
-    <div class="info-card">
-        <h4>Informações do Funcionário</h4>
-        <div class="info-grid">
-            <div class="info-item">
-                <strong>ID:</strong>
-                <span>{{ funcionario.id }}</span>
+    <div class="form-container">
+        <div class="form-card">
+            <div class="form-header">
+                <h3>Editar: {{ funcionario.nome }}</h3>
             </div>
-            <div class="info-item">
-                <strong>Data de Criação:</strong>
-                <span>{{ funcionario.data_criacao|date:"d/m/Y H:i" }}</span>
-            </div>
-            {% if funcionario.data_atualizacao %}
-            <div class="info-item">
-                <strong>Última Atualização:</strong>
-                <span>{{ funcionario.data_atualizacao|date:"d/m/Y H:i" }}</span>
-            </div>
-            {% endif %}
+            
+            <form method="post" action="{% url 'editar_funcionario' funcionario.id %}">
+                {% csrf_token %}
+                
+                <div class="form-body">
+                    <div class="form-group">
+                        <label for="nome">
+                            Nome Completo
+                            <span class="required">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="nome" name="nome" 
+                               value="{{ funcionario.nome }}" placeholder="Digite o nome completo" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">
+                            Email Corporativo
+                            <span class="required">*</span>
+                        </label>
+                        <input type="email" class="form-control" id="email" name="email" 
+                               value="{{ funcionario.email }}" placeholder="funcionario@engen.mz" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">
+                            Nova Senha
+                            <span class="optional">opcional</span>
+                        </label>
+                        <input type="password" class="form-control" id="password" name="password" 
+                               placeholder="Digite uma nova senha (deixe vazio para manter atual)">
+                        <small class="form-text">Deixe em branco para manter a senha atual</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contacto">
+                            Número de Contacto
+                            <span class="optional">opcional</span>
+                        </label>
+                        <input type="tel" class="form-control" id="contacto" name="contacto"
+                               value="{{ funcionario.contacto|default:'' }}"
+                               placeholder="+258 XX XXX XXXX">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="morada">
+                            Endereço Residencial
+                            <span class="optional">opcional</span>
+                        </label>
+                        <textarea class="form-control" id="morada" name="morada" rows="3"
+                                  placeholder="Digite o endereço completo (rua, bairro, cidade)">{{ funcionario.morada|default:'' }}</textarea>
+                    </div>
+                </div>
+
+                <div class="form-footer">
+                    <div class="help-text">
+                        Campos marcados com * são obrigatórios
+                    </div>
+                    
+                    <div class="form-actions">
+                        <a href="{% url 'funcionarios' %}" class="btn-secondary">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn-submit">
+                            Atualizar Funcionário
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 </div>

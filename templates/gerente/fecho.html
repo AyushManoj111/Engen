@@ -3,77 +3,47 @@
 {% block title %}Fechos - ENGEN{% endblock %}
 
 {% block content %}
-<style>
-    .btn-action.btn-view {
-        background-color: #17a2b8;
-        color: white;
-        padding: 4px 8px;
-        border: none;
-        border-radius: 3px;
-        text-decoration: none;
-        font-size: 0.8rem;
-        margin-right: 5px;
-    }
-    .btn-action.btn-view:hover {
-        background-color: #138496;
-        text-decoration: none;
-        color: white;
-    }
-    .btn-fazer-fecho {
-        background-color: #28a745;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        text-decoration: none;
-        font-weight: bold;
-        transition: background-color 0.3s;
-    }
-    .btn-fazer-fecho:hover {
-        background-color: #218838;
-        text-decoration: none;
-        color: white;
-    }
-</style>
 
-<div class="content-header">
-    <h2>Fechos</h2>
-    <a href="{% url 'fazer_fecho' %}" class="btn-primary btn-fazer-fecho">
-        Fazer Fecho
-    </a>
-</div>
-
-<!-- Fechos Table -->
-<div class="table-container">
-    <div class="table-header">
-        <h3>Lista de Fechos ({{ fechos.count }} total)</h3>
+<div class="fechos-content">
+    <div class="content-header">
+        <h2>Fechos</h2>
+        <a href="{% url 'fazer_fecho' %}" class="btn-primary">
+            + Fazer Fecho
+        </a>
     </div>
-    <div class="table-wrapper">
-        {% if fechos %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Fecho ID</th>
-                    <th>Data</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for fecho in fechos %}
-                <tr>
-                    <td>{{ fecho.id }}</td>
-                    <td>{{ fecho.data|date:"d/m/Y H:i" }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="empty-state">
-            <p>Nenhum fecho realizado.</p>
-            <a href="{% url 'fazer_fecho' %}" class="btn-primary btn-fazer-fecho">
-                Fazer Primeiro Fecho
-            </a>
+
+    <!-- Fechos Table -->
+    <div class="table-container">
+        <div class="table-header">
+            <h3>Lista de Fechos ({{ fechos.count }} total)</h3>
         </div>
-        {% endif %}
+        <div class="table-wrapper">
+            {% if fechos %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecho ID</th>
+                        <th>Data</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fecho in fechos %}
+                    <tr>
+                        <td>{{ fecho.id }}</td>
+                        <td>{{ fecho.data|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <p>Nenhum fecho realizado.</p>
+                <a href="{% url 'fazer_fecho' %}" class="btn-primary">
+                    Fazer Primeiro Fecho
+                </a>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}

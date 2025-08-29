@@ -3,464 +3,193 @@
 {% block title %}Nova Requisição - ENGEN{% endblock %}
 
 {% block content %}
-<div class="content-header">
-    <h2>Nova Requisição</h2>
-    <a href="{% url 'requisicoes' %}" class="btn-secondary">
-        ← Voltar
-    </a>
-</div>
 
-<div class="form-container">
-    <div class="form-card">
-        <form method="post" action="{% url 'adicionar_requisicao' %}">
-            {% csrf_token %}
-
-            <div class="form-body">
-                <div class="form-group">
-                    <label for="cliente">Cliente <span class="required">*</span></label>
-                    <select class="form-control" id="cliente" name="cliente" required>
-                        <option value="">Selecione um cliente</option>
-                        {% for cliente in clientes %}
-                        <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
-                        {% endfor %}
-                    </select>
-                    <small class="form-text">
-                        <a href="{% url 'adicionar_cliente' %}" class="btn-link">+ Adicionar novo cliente</a>
-                    </small>
-                </div>
-
-                <div class="form-group">
-                    <label for="valor">Valor (MT) <span class="required">*</span></label>
-                    <input type="number" class="form-control" id="valor" name="valor" step="0.01" min="0"
-                        placeholder="0.00" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="quantidade_senhas">Quantidade de Senhas <span class="required">*</span></label>
-                    <input type="number" class="form-control" id="quantidade_senhas" name="quantidade_senhas" min="1"
-                        placeholder="Ex: 50" required>
-                    <small class="form-text">Digite a quantidade inicial de senhas para esta requisição</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="forma_pagamento">Forma de Pagamento <span class="required">*</span></label>
-                    <select class="form-control" id="forma_pagamento" name="forma_pagamento" required
-                        onchange="toggleBancoField()">
-                        <option value="">Selecione a forma de pagamento</option>
-                        <option value="transferencia">Transferência Bancária</option>
-                        <option value="cash">Dinheiro (Cash)</option>
-                        <option value="pos">POS (Cartão)</option>
-                    </select>
-                </div>
-
-                <div class="form-group" id="banco_group" style="display: none;">
-                    <label for="banco">Nome do Banco <span class="required">*</span></label>
-                    <textarea class="form-control" id="banco" name="banco" rows="2"
-                        placeholder="Digite o nome do banco"></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="observacoes">Observações</label>
-                    <textarea class="form-control" id="observacoes" name="observacoes" rows="3"
-                        placeholder="Observações adicionais sobre a requisição (opcional)"></textarea>
-                </div>
-            </div>
-
-            <div class="form-footer">
-                <a href="{% url 'requisicoes' %}" class="btn-secondary">Cancelar</a>
-                <button type="submit" class="btn-submit">Criar Requisição</button>
-            </div>
-        </form>
+<div class="adicionar-content">
+    <div class="content-header">
+        <h2></h2>
+        <a href="{% url 'requisicoes' %}" class="btn-secondary">
+            ← Voltar
+        </a>
     </div>
-</div>
 
-<!-- Modal de Recibo -->
-{% if mostrar_recibo %}
-<div class="modal-overlay" id="reciboModal">
-    <div class="modal-container recibo-modal">
-        <div class="modal-header">
-            <h3>Recibo de Requisição</h3>
-            <button type="button" class="modal-close" onclick="fecharRecibo()">×</button>
-        </div>
+    <div class="form-container">
+        <div class="form-card">
+            <form method="post" action="{% url 'adicionar_requisicao' %}">
+                {% csrf_token %}
 
-        <div class="modal-body" id="reciboContent">
-            <div class="recibo-header">
-                <div class="empresa-info">
-                    <h2>{{ requisicao.empresa.nome|default:"ENGEN" }}</h2>
-                    <p>Sistema de Gestão de Requisições</p>
-                </div>
-                <div class="recibo-numero">
-                    <p><strong>Recibo Nº:</strong> {{ requisicao.id|stringformat:"06d" }}</p>
-                    <p><strong>Data:</strong> {{ requisicao.data_criacao|date:"d/m/Y H:i" }}</p>
-                </div>
-            </div>
+                <div class="form-body">
+                    <div class="form-group">
+                        <label for="cliente">Cliente <span class="required">*</span></label>
+                        <select class="form-control" id="cliente" name="cliente" required>
+                            <option value="">Selecione um cliente</option>
+                            {% for cliente in clientes %}
+                            <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text">
+                            <a href="{% url 'adicionar_cliente' %}" class="btn-link">+ Adicionar novo cliente</a>
+                        </small>
+                    </div>
 
-            <div class="recibo-divider"></div>
+                    <div class="form-group">
+                        <label for="valor">Valor (MT) <span class="required">*</span></label>
+                        <input type="number" class="form-control" id="valor" name="valor" step="0.01" min="0"
+                            placeholder="0.00" required>
+                    </div>
 
-            <div class="recibo-details">
-                <div class="detail-row">
-                    <span class="detail-label">Cliente:</span>
-                    <span class="detail-value">{{ requisicao.cliente.nome }}</span>
-                </div>
+                    <div class="form-group">
+                        <label for="quantidade_senhas">Quantidade de Senhas <span class="required">*</span></label>
+                        <input type="number" class="form-control" id="quantidade_senhas" name="quantidade_senhas" min="1"
+                            placeholder="Ex: 50" required>
+                        <small class="form-text">Digite a quantidade inicial de senhas para esta requisição</small>
+                    </div>
 
-                <div class="detail-row">
-                    <span class="detail-label">Valor:</span>
-                    <span class="detail-value">{{ requisicao.valor|floatformat:2 }} MT</span>
-                </div>
+                    <div class="form-group">
+                        <label for="forma_pagamento">Forma de Pagamento <span class="required">*</span></label>
+                        <select class="form-control" id="forma_pagamento" name="forma_pagamento" required
+                            onchange="toggleBancoField()">
+                            <option value="">Selecione a forma de pagamento</option>
+                            <option value="transferencia">Transferência Bancária</option>
+                            <option value="cash">Dinheiro (Cash)</option>
+                            <option value="pos">POS (Cartão)</option>
+                        </select>
+                    </div>
 
-                <div class="detail-row">
-                    <span class="detail-label">Quantidade de Senhas:</span>
-                    <span class="detail-value">{{ requisicao.senhas }}</span>
-                </div>
+                    <div class="form-group" id="banco_group" style="display: none;">
+                        <label for="banco">Nome do Banco <span class="required">*</span></label>
+                        <textarea class="form-control" id="banco" name="banco" rows="2"
+                            placeholder="Digite o nome do banco"></textarea>
+                    </div>
 
-                <div class="detail-row">
-                    <span class="detail-label">Forma de Pagamento:</span>
-                    <span class="detail-value">
-                        {% if requisicao.forma_pagamento == 'transferencia' %}
-                        <i class="fas fa-university"></i> Transferência Bancária
-                        {% elif requisicao.forma_pagamento == 'cash' %}
-                        <i class="fas fa-money-bill-wave"></i> Dinheiro (Cash)
-                        {% elif requisicao.forma_pagamento == 'pos' %}
-                        <i class="fas fa-credit-card"></i> POS (Cartão)
-                        {% else %}
-                        {{ requisicao.get_forma_pagamento_display }}
-                        {% endif %}
-                    </span>
-                </div>
-
-                {% if requisicao.banco %}
-                <div class="detail-row">
-                    <span class="detail-label">Banco:</span>
-                    <span class="detail-value">{{ requisicao.banco }}</span>
-                </div>
-                {% endif %}
-
-                <div class="detail-row">
-                    <span class="detail-label">Status:</span>
-                    <span class="detail-value status-ativa">
-                        {% if requisicao.ativa %}Ativa{% else %}Inativa{% endif %}
-                    </span>
+                    <div class="form-group">
+                        <label for="observacoes">Observações</label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" rows="3"
+                            placeholder="Observações adicionais sobre a requisição (opcional)"></textarea>
+                    </div>
                 </div>
 
-                <div class="detail-row">
-                    <span class="detail-label">Senhas Restantes:</span>
-                    <span class="detail-value">{{ requisicao.senhas_restantes }}</span>
+                <div class="form-footer">
+                    <a href="{% url 'requisicoes' %}" class="btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn-submit">Criar Requisição</button>
                 </div>
-
-                {% if observacoes %}
-                <div class="detail-row">
-                    <span class="detail-label">Observações:</span>
-                    <span class="detail-value">{{ observacoes }}</span>
-                </div>
-                {% endif %}
-            </div>
-
-            <div class="recibo-divider"></div>
-
-            <div class="recibo-footer">
-                <p class="recibo-assinatura">
-                    _________________________________<br>
-                    Assinatura do Responsável
-                </p>
-                <p class="recibo-data-impressao">
-                    Impresso em: {% now "d/m/Y H:i:s" %}
-                </p>
-            </div>
-        </div>
-
-        <div class="modal-footer">
-            <button type="button" class="btn-secondary" onclick="fecharRecibo()">Fechar</button>
-            <button type="button" class="btn-primary" onclick="imprimirRecibo()">
-                <i class="fas fa-print"></i> Imprimir PDF
-            </button>
+            </form>
         </div>
     </div>
+
+    <!-- Modal de Recibo -->
+    {% if mostrar_recibo %}
+    <div class="modal-overlay" id="reciboModal">
+        <div class="modal-container recibo-modal">
+            <div class="modal-header">
+                <h3>Recibo de Requisição</h3>
+                <button type="button" class="modal-close" onclick="fecharRecibo()">×</button>
+            </div>
+
+            <div class="modal-body" id="reciboContent">
+                <div class="recibo-header">
+                    <div class="empresa-info">
+                        <h2>{{ requisicao.empresa.nome|default:"ENGEN" }}</h2>
+                        <p>Sistema de Gestão de Requisições</p>
+                    </div>
+                    <div class="recibo-numero">
+                        <p><strong>Recibo Nº:</strong> {{ requisicao.id|stringformat:"06d" }}</p>
+                        <p><strong>Data:</strong> {{ requisicao.data_criacao|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
+
+                <div class="recibo-divider"></div>
+
+                <div class="recibo-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Cliente:</span>
+                        <span class="detail-value">{{ requisicao.cliente.nome }}</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label">Valor:</span>
+                        <span class="detail-value">{{ requisicao.valor|floatformat:2 }} MT</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label">Quantidade de Senhas:</span>
+                        <span class="detail-value">{{ requisicao.senhas }}</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label">Forma de Pagamento:</span>
+                        <span class="detail-value">
+                            {% if requisicao.forma_pagamento == 'transferencia' %}
+                            <i class="fas fa-university"></i> Transferência Bancária
+                            {% elif requisicao.forma_pagamento == 'cash' %}
+                            <i class="fas fa-money-bill-wave"></i> Dinheiro (Cash)
+                            {% elif requisicao.forma_pagamento == 'pos' %}
+                            <i class="fas fa-credit-card"></i> POS (Cartão)
+                            {% else %}
+                            {{ requisicao.get_forma_pagamento_display }}
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    {% if requisicao.banco %}
+                    <div class="detail-row">
+                        <span class="detail-label">Banco:</span>
+                        <span class="detail-value">{{ requisicao.banco }}</span>
+                    </div>
+                    {% endif %}
+
+                    <div class="detail-row">
+                        <span class="detail-label">Status:</span>
+                        <span class="detail-value status-ativa">
+                            {% if requisicao.ativa %}Ativa{% else %}Inativa{% endif %}
+                        </span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label">Senhas Restantes:</span>
+                        <span class="detail-value">{{ requisicao.senhas_restantes }}</span>
+                    </div>
+
+                    {% if observacoes %}
+                    <div class="detail-row">
+                        <span class="detail-label">Observações:</span>
+                        <span class="detail-value">{{ observacoes }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="recibo-divider"></div>
+
+                <div class="recibo-footer">
+                    <p class="recibo-assinatura">
+                        _________________________________<br>
+                        Assinatura do Responsável
+                    </p>
+                    <p class="recibo-data-impressao">
+                        Impresso em: {% now "d/m/Y H:i:s" %}
+                    </p>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="fecharRecibo()">Fechar</button>
+                <button type="button" class="btn-primary" onclick="imprimirRecibo()">
+                    <i class="fas fa-print"></i> Imprimir PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden data for JavaScript -->
+    <script type="application/json" id="requisicao-data">
+    {
+        "requisicaoId": "{{ requisicao.id|default:'' }}",
+        "hasRequisicao": {% if requisicao %}true{% else %}false{% endif %},
+        "reciboUrl": "{% if requisicao %}{% url 'gerar_recibo_pdf' requisicao.id %}{% endif %}",
+        "requisicoesUrl": "{% url 'requisicoes' %}"
+    }
+    </script>
+    {% endif %}
 </div>
-
-<!-- Hidden data for JavaScript -->
-<script type="application/json" id="requisicao-data">
-{
-    "requisicaoId": "{{ requisicao.id|default:'' }}",
-    "hasRequisicao": {% if requisicao %}true{% else %}false{% endif %},
-    "reciboUrl": "{% if requisicao %}{% url 'gerar_recibo_pdf' requisicao.id %}{% endif %}",
-    "requisicoesUrl": "{% url 'requisicoes' %}"
-}
-</script>
-{% endif %}
-
-<style>
-    /* Estilos do Modal */
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-    }
-
-    .modal-container {
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        max-width: 600px;
-        width: 90%;
-        max-height: 90vh;
-        overflow-y: auto;
-    }
-
-    .recibo-modal {
-        max-width: 700px;
-    }
-
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px;
-        border-bottom: 1px solid #e5e5e5;
-        background: #f8f9fa;
-        border-radius: 8px 8px 0 0;
-    }
-
-    .modal-header h3 {
-        margin: 0;
-        color: #333;
-        font-size: 1.5rem;
-    }
-
-    .modal-close {
-        background: none;
-        border: none;
-        font-size: 24px;
-        cursor: pointer;
-        color: #666;
-        padding: 0;
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        transition: background-color 0.3s;
-    }
-
-    .modal-close:hover {
-        background-color: #f0f0f0;
-        color: #333;
-    }
-
-    .modal-body {
-        padding: 30px;
-    }
-
-    .modal-footer {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-        padding: 20px;
-        border-top: 1px solid #e5e5e5;
-        background: #f8f9fa;
-        border-radius: 0 0 8px 8px;
-    }
-
-    /* Estilos do Recibo */
-    .recibo-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 20px;
-    }
-
-    .empresa-info h2 {
-        margin: 0;
-        color: #2c3e50;
-        font-size: 2rem;
-        font-weight: bold;
-    }
-
-    .empresa-info p {
-        margin: 5px 0 0 0;
-        color: #666;
-        font-size: 0.9rem;
-    }
-
-    .recibo-numero {
-        text-align: right;
-    }
-
-    .recibo-numero p {
-        margin: 5px 0;
-        color: #666;
-        font-size: 0.9rem;
-    }
-
-    .recibo-divider {
-        height: 2px;
-        background: linear-gradient(to right, #3498db, #2c3e50);
-        margin: 20px 0;
-        border-radius: 1px;
-    }
-
-    .recibo-details {
-        margin: 25px 0;
-    }
-
-    .detail-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 0;
-        border-bottom: 1px solid #f0f0f0;
-    }
-
-    .detail-row:last-child {
-        border-bottom: none;
-    }
-
-    .detail-label {
-        font-weight: 600;
-        color: #2c3e50;
-        min-width: 180px;
-    }
-
-    .detail-value {
-        color: #333;
-        text-align: right;
-        flex: 1;
-    }
-
-    .detail-value i {
-        margin-right: 8px;
-        color: #3498db;
-    }
-
-    .status-ativa {
-        color: #27ae60;
-        font-weight: bold;
-    }
-
-    .status-inativa {
-        color: #e74c3c;
-        font-weight: bold;
-    }
-
-    .recibo-footer {
-        margin-top: 30px;
-        text-align: center;
-    }
-
-    .recibo-assinatura {
-        margin: 30px 0;
-        color: #666;
-        font-size: 0.9rem;
-    }
-
-    .recibo-data-impressao {
-        margin: 10px 0 0 0;
-        color: #999;
-        font-size: 0.8rem;
-    }
-
-    /* Botões */
-    .btn-primary {
-        background: #3498db;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: background-color 0.3s;
-    }
-
-    .btn-primary:hover {
-        background: #2980b9;
-    }
-
-    .btn-secondary {
-        background: #95a5a6;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 14px;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        transition: background-color 0.3s;
-    }
-
-    .btn-secondary:hover {
-        background: #7f8c8d;
-        color: white;
-    }
-
-    /* Responsividade */
-    @media (max-width: 768px) {
-        .recibo-header {
-            flex-direction: column;
-            text-align: center;
-        }
-
-        .recibo-numero {
-            text-align: center;
-            margin-top: 15px;
-        }
-
-        .detail-row {
-            flex-direction: column;
-            align-items: flex-start;
-            text-align: left;
-        }
-
-        .detail-label {
-            min-width: auto;
-            margin-bottom: 5px;
-        }
-
-        .detail-value {
-            text-align: left;
-        }
-
-        .modal-footer {
-            flex-direction: column;
-        }
-
-        .modal-footer button {
-            width: 100%;
-            justify-content: center;
-        }
-    }
-
-    @media print {
-
-        .modal-overlay,
-        .modal-header,
-        .modal-footer {
-            display: none !important;
-        }
-
-        .modal-container {
-            box-shadow: none;
-            max-width: none;
-            width: 100%;
-            max-height: none;
-        }
-
-        .modal-body {
-            padding: 0;
-        }
-    }
-</style>
 
 <script>
     function toggleBancoField() {

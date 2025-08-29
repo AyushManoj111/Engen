@@ -3,46 +3,75 @@
 {% block title %}Adicionar Cliente - ENGEN{% endblock %}
 
 {% block content %}
-<div class="content-header">
-    <h2>Adicionar Cliente</h2>
-    <a href="{% url 'clientes' %}" class="btn-secondary">
-        ← Voltar
-    </a>
-</div>
 
-<div class="form-container">
-    <div class="form-card">
-        <div class="form-header">
-            <h3>Dados do Cliente</h3>
+<div class="adicionar-cliente-content">
+    <div class="content-header">
+        <div>
+            <div class="breadcrumb">
+                <span>Clientes</span>
+                <span>→</span>
+                <span>Novo</span>
+            </div>
         </div>
-        
-        <form method="post" action="{% url 'adicionar_cliente' %}">
-            {% csrf_token %}
+        <a href="{% url 'clientes' %}" class="btn-secondary">
+            ← Voltar à Lista
+        </a>
+    </div>
+
+    <div class="form-container">
+        <div class="form-card">
+            <div class="form-header">
+                <h3>Dados do Cliente</h3>
+            </div>
             
-            <div class="form-body">
-                <div class="form-group">
-                    <label for="nome">Nome <span class="required">*</span></label>
-                    <input type="text" class="form-control" id="nome" name="nome" required>
+            <form method="post" action="{% url 'adicionar_cliente' %}">
+                {% csrf_token %}
+                
+                <div class="form-body">
+                    <div class="form-group">
+                        <label for="nome">
+                            Nome Completo
+                            <span class="required">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="nome" name="nome" 
+                               placeholder="Digite o nome completo do cliente" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contacto">
+                            Número de Contacto
+                            <span class="optional">opcional</span>
+                        </label>
+                        <input type="tel" class="form-control" id="contacto" name="contacto"
+                               placeholder="+258 XX XXX XXXX">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="endereco">
+                            Endereço Completo
+                            <span class="optional">opcional</span>
+                        </label>
+                        <textarea class="form-control" id="endereco" name="endereco" rows="3"
+                                  placeholder="Digite o endereço completo (rua, bairro, cidade)"></textarea>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="contacto">Contacto</label>
-                    <input type="tel" class="form-control" id="contacto" name="contacto"
-                        placeholder="+258 XX XXX XXXX">
+                <div class="form-footer">
+                    <div class="help-text">
+                        Campos marcados com * são obrigatórios
+                    </div>
+                    
+                    <div class="form-actions">
+                        <a href="{% url 'clientes' %}" class="btn-secondary">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn-submit">
+                            Salvar Cliente
+                        </button>
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label for="endereco">Endereço</label>
-                    <textarea class="form-control" id="endereco" name="endereco" rows="3"
-                        placeholder="Digite o endereço completo"></textarea>
-                </div>
-            </div>
-
-            <div class="form-footer">
-                <a href="{% url 'clientes' %}" class="btn-secondary">Cancelar</a>
-                <button type="submit" class="btn-submit">Salvar Cliente</button>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %}

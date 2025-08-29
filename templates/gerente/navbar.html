@@ -1,108 +1,86 @@
 {% load static %}
 
 <nav class="navbar">
-   <div class="navbar-brand">
-       <h1 class="system-title">SmartPump</h1>
-   </div>
-   <div class="navbar-user">
-       <a href="/" class="nav-link">Home</a>
-       <a href="{% url 'criar_empresa' %}" class="nav-link">Empresa</a>
-       <a href="{% url 'login' %}" class="nav-link">Gerente</a>
-       <a href="{% url 'funcionariologin' %}" class="nav-link">Funcionário</a>
-   </div>
+    <div class="navbar-brand">
+
+    </div>
+    <div class="navbar-user">
+        <a href="/" class="nav-link">Home</a>
+        <a href="{% url 'criar_empresa' %}" class="nav-link">Empresa</a>
+        <a href="{% url 'login' %}" class="nav-link">Gerente</a>
+        <a href="{% url 'funcionariologin' %}" class="nav-link">Funcionário</a>
+    </div>
 </nav>
 
 <style>
-   .navbar {
-       position: fixed;
-       top: 0;
-       left: 0;
-       width: 100%;
-       height: 65px; /* Altura fixa definida */
-       box-sizing: border-box;
-       z-index: 1000;
-       background: rgba(17, 24, 39, 0.95);
-       backdrop-filter: blur(15px);
-       padding: 12px 25px;
-       display: flex;
-       justify-content: space-between;
-       align-items: center;
-       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-   }
+    .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 70px;
+        box-sizing: border-box;
+        z-index: 1000;
+        /* menor */
+        background-color: #ffffff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        padding: 0 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #e5e7eb;
+    }
 
-   .navbar-brand {
-       display: flex;
-       align-items: center;
-   }
+    .navbar-brand {
+        display: flex;
+        align-items: center;
+    }
 
-   .system-title {
-       font-size: 1.5rem;
-       color: #ffffff;
-       font-weight: 600;
-       margin: 0;
-   }
+    .system-title {
+        font-size: 1.5rem;
+        color: #1f2937;
+        font-weight: 600;
+        margin: 0;
+    }
 
-   .navbar-user {
-       display: flex;
-       align-items: center;
-       gap: 8px;
-   }
+    .navbar-user {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
 
-   .nav-link {
-       color: rgba(255, 255, 255, 0.8);
-       text-decoration: none;
-       padding: 8px 16px;
-       border-radius: 6px;
-       transition: all 0.2s ease;
-       font-size: 0.95rem;
-       font-weight: 400;
-   }
+    .nav-link {
+        color: #4b5563;
+        text-decoration: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
 
-   .nav-link:hover {
-       background-color: rgba(255, 255, 255, 0.1);
-       color: #ffffff;
-   }
+    .nav-link:hover {
+        background-color: #f3f4f6;
+        color: #111827;
+    }
 
-   .logout-btn {
-       color: rgba(255, 255, 255, 0.8);
-       text-decoration: none;
-       padding: 8px 16px;
-       border-radius: 6px;
-       transition: all 0.2s ease;
-       font-size: 0.95rem;
-       font-weight: 400;
-       border-left: 1px solid rgba(255, 255, 255, 0.2);
-       margin-left: 12px;
-       padding-left: 20px;
-   }
+    @media (max-width: 768px) {
+        .navbar {
+            height: 60px;
+            padding: 0 15px;
+        }
 
-   .logout-btn:hover {
-       background-color: rgba(239, 68, 68, 0.2);
-       color: #fca5a5;
-   }
+        .system-title {
+            font-size: 1.1rem;
+        }
 
-   @media (max-width: 768px) {
-       .navbar {
-           height: 55px; /* Altura menor em mobile */
-           padding: 10px 15px;
-       }
-       
-       .system-title { 
-           font-size: 0.9rem; 
-       }
-       
-       .navbar-user { 
-           gap: 3px; 
-       }
-       
-       .nav-link, .logout-btn { 
-           padding: 6px 8px; 
-           font-size: 0.85rem; 
-       }
-       
-       .logout-btn { 
-           margin-left: 8px; 
-           padding-left: 12px; 
-       }
-   }
+        .navbar-user {
+            gap: 6px;
+        }
+
+        .nav-link {
+            padding: 6px 10px;
+            font-size: 0.9rem;
+        }
+    }
 </style>

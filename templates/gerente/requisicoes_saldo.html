@@ -3,217 +3,126 @@
 {% block title %}Requisições de Saldo - ENGEN{% endblock %}
 
 {% block content %}
-<style>
-    /* Estilos para Estatísticas */
-    .stats-container {
-        margin-top: 20px;
-    }
 
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-    }
-
-    .stat-item {
-        text-align: center;
-        background: #fafbfc;
-        padding: 12px;
-        border-radius: 4px;
-        border: 1px solid #e1e5e9;
-    }
-
-    .stat-number {
-        display: block;
-        font-size: 1.4rem;
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 2px;
-    }
-
-    .stat-label {
-        font-size: 0.8rem;
-        color: #666;
-    }
-
-    /* Estilos para Fecho */
-    .fecho-badge {
-        padding: 4px 8px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .fecho-fechado {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-    }
-
-    .fecho-aberto {
-        background: #fff3cd;
-        color: #856404;
-        border: 1px solid #ffeaa7;
-    }
-
-    /* Linha desabilitada para itens fechados */
-    .row-fechado {
-        opacity: 0.7;
-        background-color: #f8f9fa !important;
-    }
-
-    /* Botões desabilitados */
-    .btn-disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        pointer-events: none;
-    }
-
-    /* Estilo para botão QR Code */
-    .btn-qr {
-        background-color: #28a745;
-        color: white;
-        border: 1px solid #28a745;
-    }
-
-    .btn-qr:hover {
-        background-color: #218838;
-        border-color: #1e7e34;
-    }
-
-    /* Responsividade */
-    @media (max-width: 768px) {
-        .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (max-width: 480px) {
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
-
-<div class="content-header">
-    <h2></h2>
-    <a href="{% url 'adicionar_requisicao_saldo' %}" class="btn-primary">
-        + Nova Requisição
-    </a>
-</div>
-
-<!-- Requisições Table -->
-<div class="table-container">
-    <div class="table-header">
-        <h3>Lista de Requisições de Saldo ({{ requisicoes.count }} total)</h3>
-        <div class="table-filters">
-            <select class="filter-select" id="statusFilter" onchange="filterByStatus()">
-                <option value="">Todos os Status</option>
-                <option value="esgotado">Saldo Esgotado</option>
-                <option value="baixo">Saldo Baixo</option>
-                <option value="medio">Saldo Médio</option>
-                <option value="alto">Saldo Alto</option>
-            </select>
-            <select class="filter-select" id="fechoFilter" onchange="filterByFecho()">
-                <option value="">Todos os Fechos</option>
-                <option value="fechado">Fechadas</option>
-                <option value="aberto">Abertas</option>
-            </select>
-        </div>
+<div class="adicionar-content">
+    <div class="content-header">
+        <h2></h2>
+        <a href="{% url 'adicionar_requisicao_saldo' %}" class="btn-primary">
+            + Nova Requisição
+        </a>
     </div>
-    <div class="table-wrapper">
-        {% if requisicoes %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Código</th>
-                    <th>Cliente</th>
-                    <th>Valor Total</th>
-                    <th>Saldo Restante</th>
-                    <th>Fecho</th>
-                    <th>Data Criação</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for requisicao in requisicoes %}
-                <tr
-                    class="{% if requisicao.fecho %}row-fechado{% endif %}"
-                    data-status="{% if requisicao.saldo_restante == 0 %}esgotado{% elif requisicao.saldo_restante <= 50 %}baixo{% elif requisicao.saldo_restante <= 200 %}medio{% else %}alto{% endif %}"
-                    data-fecho="{% if requisicao.fecho %}fechado{% else %}aberto{% endif %}">
-                    <td>
-                        <code>{{ requisicao.codigo }}</code>
-                    </td>
-                    <td>{{ requisicao.cliente.nome }}</td>
-                    <td class="valor-cell">{{ requisicao.valor_total }} MT</td>
-                    <td>
-                        <span
-                            class="senhas-restante {% if requisicao.saldo_restante == 0 %}completo{% elif requisicao.saldo_restante <= 50 %}baixo{% elif requisicao.saldo_restante <= 200 %}medio{% else %}alto{% endif %}">
-                            {{ requisicao.saldo_restante }} MT
-                        </span>
-                    </td>
-                    <td>
-                        {% if requisicao.fecho %}
-                            <span class="fecho-badge fecho-fechado" title="Fechado em {{ requisicao.fecho.data|date:'d/m/Y H:i' }}">
-                                Fecho #{{ requisicao.fecho.id }}
+
+    <!-- Requisições Table -->
+    <div class="table-container">
+        <div class="table-header">
+            <h3>Lista de Requisições de Saldo ({{ requisicoes.count }} total)</h3>
+            <div class="table-filters">
+                <select class="filter-select" id="statusFilter" onchange="filterByStatus()">
+                    <option value="">Todos os Status</option>
+                    <option value="esgotado">Saldo Esgotado</option>
+                    <option value="baixo">Saldo Baixo</option>
+                    <option value="medio">Saldo Médio</option>
+                    <option value="alto">Saldo Alto</option>
+                </select>
+                <select class="filter-select" id="fechoFilter" onchange="filterByFecho()">
+                    <option value="">Todos os Fechos</option>
+                    <option value="fechado">Fechadas</option>
+                    <option value="aberto">Abertas</option>
+                </select>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            {% if requisicoes %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Cliente</th>
+                        <th>Valor Total</th>
+                        <th>Saldo Restante</th>
+                        <th>Fecho</th>
+                        <th>Data Criação</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for requisicao in requisicoes %}
+                    <tr
+                        class="{% if requisicao.fecho %}row-fechado{% endif %}"
+                        data-status="{% if requisicao.saldo_restante == 0 %}esgotado{% elif requisicao.saldo_restante <= 50 %}baixo{% elif requisicao.saldo_restante <= 200 %}medio{% else %}alto{% endif %}"
+                        data-fecho="{% if requisicao.fecho %}fechado{% else %}aberto{% endif %}">
+                        <td>
+                            <code>{{ requisicao.codigo }}</code>
+                        </td>
+                        <td>{{ requisicao.cliente.nome }}</td>
+                        <td class="valor-cell">{{ requisicao.valor_total }} MT</td>
+                        <td>
+                            <span
+                                class="senhas-restante {% if requisicao.saldo_restante == 0 %}completo{% elif requisicao.saldo_restante <= 50 %}baixo{% elif requisicao.saldo_restante <= 200 %}medio{% else %}alto{% endif %}">
+                                {{ requisicao.saldo_restante }} MT
                             </span>
-                        {% else %}
-                            <span class="fecho-badge fecho-aberto">
-                                Aberto
-                            </span>
-                        {% endif %}
-                    </td>
-                    <td>{{ requisicao.data_criacao|date:"d/m/Y" }}</td>
-                    <td class="actions-cell">
-                        {% if requisicao.fecho %}
-                            <!-- Requisições fechadas - apenas visualização de QR codes -->
-                            <a href="{% url 'imprimir_qr_codes_saldo' requisicao.id %}" class="btn-action btn-qr" title="Visualizar QR Codes">QR</a>
-                            <span class="btn-action btn-disabled" title="Não é possível editar requisições fechadas">Editar</span>
-                            <span class="btn-action btn-disabled" title="Não é possível excluir requisições fechadas">Excluir</span>
-                        {% else %}
-                            <!-- Requisições abertas - todas as ações disponíveis -->
-                            <a href="{% url 'imprimir_qr_codes_saldo' requisicao.id %}" class="btn-action btn-qr" title="Gerar QR Codes">QR</a>
-                            <a href="{% url 'editar_requisicao_saldo' requisicao.id %}" class="btn-action btn-edit">Editar</a>
-                            <a href="{% url 'deletar_requisicao_saldo' requisicao.id %}" class="btn-action btn-delete"
-                                onclick="return confirm('Tem certeza que deseja excluir esta requisição de saldo?')">Excluir</a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="empty-state">
-            <p>Nenhuma requisição de saldo cadastrada.</p>
-            <a href="{% url 'adicionar_requisicao_saldo' %}" class="btn-primary">
-                Criar Primeira Requisição
-            </a>
+                        </td>
+                        <td>
+                            {% if requisicao.fecho %}
+                                <span class="fecho-badge fecho-fechado" title="Fechado em {{ requisicao.fecho.data|date:'d/m/Y H:i' }}">
+                                    Fecho #{{ requisicao.fecho.id }}
+                                </span>
+                            {% else %}
+                                <span class="fecho-badge fecho-aberto">
+                                    Aberto
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>{{ requisicao.data_criacao|date:"d/m/Y" }}</td>
+                        <td class="actions-cell">
+                            {% if requisicao.fecho %}
+                                <!-- Requisições fechadas - apenas visualização de QR codes -->
+                                <a href="{% url 'imprimir_qr_codes_saldo' requisicao.id %}" class="btn-action btn-qr" title="Visualizar QR Codes">QR</a>
+                                <span class="btn-action btn-disabled" title="Não é possível editar requisições fechadas">Editar</span>
+                                <span class="btn-action btn-disabled" title="Não é possível excluir requisições fechadas">Excluir</span>
+                            {% else %}
+                                <!-- Requisições abertas - todas as ações disponíveis -->
+                                <a href="{% url 'imprimir_qr_codes_saldo' requisicao.id %}" class="btn-action btn-qr" title="Gerar QR Codes">QR</a>
+                                <a href="{% url 'editar_requisicao_saldo' requisicao.id %}" class="btn-action btn-edit">Editar</a>
+                                <a href="{% url 'deletar_requisicao_saldo' requisicao.id %}" class="btn-action btn-delete"
+                                    onclick="return confirm('Tem certeza que deseja excluir esta requisição de saldo?')">Excluir</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <p>Nenhuma requisição de saldo cadastrada.</p>
+                <a href="{% url 'adicionar_requisicao_saldo' %}" class="btn-primary">
+                    Criar Primeira Requisição
+                </a>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
-</div>
 
-<!-- Estatísticas -->
-{% if requisicoes %}
-<div class="stats-container">
-    <div class="stats-grid">
-        <div class="stat-item">
-            <span class="stat-number">{{ requisicoes.count }}</span>
-            <span class="stat-label">Total de Requisições</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-number">{{ total_valor|default:0 }} MT</span>
-            <span class="stat-label">Valor Total</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-number">{{ saldo_restante_total|default:0 }} MT</span>
-            <span class="stat-label">Saldo Restante Total</span>
+    <!-- Estatísticas -->
+    {% if requisicoes %}
+    <div class="stats-container">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-number">{{ requisicoes.count }}</span>
+                <span class="stat-label">Total de Requisições</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ total_valor|default:0 }} MT</span>
+                <span class="stat-label">Valor Total</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ saldo_restante_total|default:0 }} MT</span>
+                <span class="stat-label">Saldo Restante Total</span>
+            </div>
         </div>
     </div>
+    {% endif %}
 </div>
-{% endif %}
 
 <script>
     function filterByStatus() {
