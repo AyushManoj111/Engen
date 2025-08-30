@@ -1,29 +1,25 @@
-# Use official Python image
-FROM python:3.13-slim
+# Use Python base image
+FROM python:3.11-slim
 
-# Prevent Python from writing .pyc files
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
-# Install system dependencies (zbar + build tools)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libzbar0 gcc g++ \
+# Install system dependencies (including zbar for pyzbar)
+RUN apt-get update && apt-get install -y \
+    libzbar0 \
+    gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Set workdir
+# Set work directory
 WORKDIR /app
 
-# Copy dependency files first
-COPY requirements.txt .
-
 # Install Python dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy rest of the project
+# Copy project files
 COPY . .
 
-# Collect static files at build time (optional)
+# Collect static files at build time
 RUN python manage.py collectstatic --noinput
 
-# Run migrations at runtime (entrypoint or CMD)
-CMD ["gunicorn", "projecto_engen.wsgi:application", "--bind", "0.0.0.0:8000"]
+# Run migrations each time the container starts, then launch Gunicorn
+CMD python manage.py migrate --noinput && \
+    gunicorn projecto_engen.wsgi:application --bind 0.0.0.0:$PORT
