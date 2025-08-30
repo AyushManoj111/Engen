@@ -2,9 +2,16 @@
 
 <nav class="navbar">
     <div class="navbar-brand">
-
+        <!-- vazio -->
     </div>
-    <div class="navbar-user">
+
+    <!-- Botão toggle (apenas mobile) -->
+    <button class="navbar-toggle" id="navbar-toggle" aria-label="Abrir menu" aria-expanded="false">
+        <span class="icon-arrow"></span>
+    </button>
+
+    <!-- Menu -->
+    <div class="navbar-user" id="navbar-menu">
         <a href="/" class="nav-link">Home</a>
         <a href="{% url 'criar_empresa' %}" class="nav-link">Empresa</a>
         <a href="{% url 'login' %}" class="nav-link">Gerente</a>
@@ -21,7 +28,6 @@
         height: 70px;
         box-sizing: border-box;
         z-index: 1000;
-        /* menor */
         background-color: #ffffff;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         padding: 0 25px;
@@ -29,18 +35,6 @@
         justify-content: space-between;
         align-items: center;
         border-bottom: 1px solid #e5e7eb;
-    }
-
-    .navbar-brand {
-        display: flex;
-        align-items: center;
-    }
-
-    .system-title {
-        font-size: 1.5rem;
-        color: #1f2937;
-        font-weight: 600;
-        margin: 0;
     }
 
     .navbar-user {
@@ -64,23 +58,77 @@
         color: #111827;
     }
 
+    /* Botão toggle minimalista */
+    .navbar-toggle {
+        display: none;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 6px;
+    }
+
+    .navbar-toggle .icon-arrow {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-left: 2px solid #000;
+        border-bottom: 2px solid #000;
+        transform: rotate(-45deg); /* seta para baixo */
+        transition: transform 0.2s ease;
+    }
+
+    .navbar-toggle.active .icon-arrow {
+        transform: rotate(135deg); /* seta para cima */
+    }
+
     @media (max-width: 768px) {
         .navbar {
             height: 60px;
             padding: 0 15px;
         }
 
-        .system-title {
-            font-size: 1.1rem;
+        /* Mostrar botão toggle no mobile */
+        .navbar-toggle {
+            display: block;
         }
 
+        /* Esconder menu por padrão */
         .navbar-user {
-            gap: 6px;
+            position: absolute;
+            top: 60px;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0;
+            padding: 10px 15px;
+            display: none;
+        }
+
+        .navbar-user.show {
+            display: flex;
         }
 
         .nav-link {
-            padding: 6px 10px;
-            font-size: 0.9rem;
+            padding: 10px;
+            width: 100%;
+            text-align: left;
         }
     }
 </style>
+
+<script>
+    (function () {
+        const toggleBtn = document.getElementById('navbar-toggle');
+        const menu = document.getElementById('navbar-menu');
+
+        toggleBtn.addEventListener('click', () => {
+            const expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+            toggleBtn.setAttribute('aria-expanded', !expanded);
+            menu.classList.toggle('show');
+            toggleBtn.classList.toggle('active');
+        });
+    })();
+</script>

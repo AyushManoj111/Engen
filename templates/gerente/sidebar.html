@@ -1,4 +1,15 @@
-<div class="sidebar">
+<!-- BOTÃO HAMBÚRGUER (só aparece em telas menores) -->
+<button class="hamburger-btn" id="hamburger" aria-label="Abrir menu" aria-controls="app-sidebar" aria-expanded="false">
+    <span></span><span></span><span></span>
+</button>
+
+<!-- OVERLAY PARA FECHAR AO CLICAR FORA -->
+<div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="app-sidebar">
+    <button class="sidebar-close" id="sidebar-close" aria-label="Fechar menu">&times;</button>
+
     <div class="user-section">
         <div class="empresa-name">{{ empresa_atual.nome|default:"Sistema" }}</div>
         <div class="user-info">{{ request.user.get_full_name|default:request.user.username }}</div>
@@ -52,43 +63,37 @@
 </div>
 
 <style>
+    /* ====== BASE ====== */
     .sidebar {
         width: 240px;
         background-color: #ffffff;
         min-height: 100vh;
         position: fixed;
         top: 0;
-        /* cobre também o navbar */
         left: 0;
         overflow-y: auto;
         border-right: 1px solid #e5e7eb;
         display: flex;
         flex-direction: column;
-        z-index: 2000;
-        /* maior que o navbar */
+        z-index: 3000;
+        transition: transform 0.3s ease-in-out;
     }
 
     .user-section {
         padding: 16px 20px;
-        background-color: #ffffff;
         border-bottom: 1px solid #e5e7eb;
-        text-align: left;
     }
 
     .empresa-name {
         color: #1f2937;
         font-size: 16px;
         font-weight: 600;
-        letter-spacing: 0;
         margin-bottom: 4px;
-        text-transform: capitalize;
     }
 
     .user-info {
         color: #6b7280;
         font-size: 14px;
-        font-weight: 400;
-        opacity: 1;
     }
 
     .sidebar-nav {
@@ -110,7 +115,6 @@
         margin-top: auto;
         padding-top: 16px;
         border-top: 1px solid #e5e7eb;
-        margin-top: 20px;
     }
 
     .nav-link {
@@ -138,10 +142,6 @@
         font-weight: 600;
     }
 
-    .nav-link.active::before {
-        content: none;
-    }
-
     .nav-logout {
         color: #ef4444;
     }
@@ -152,26 +152,77 @@
         color: #ef4444;
     }
 
-    /* Scrollbar custom */
-    .sidebar::-webkit-scrollbar {
-        width: 6px;
+    /* ====== HAMBURGER ====== */
+    .hamburger-btn {
+        position: fixed;
+        left: 16px;
+        top: 16px;
+        width: 44px;
+        height: 44px;
+        display: none;
+        /* só em telas pequenas */
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        border: 1px solid #e5e7eb;
+        background: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+        cursor: pointer;
+        z-index: 5000;
     }
 
-    .sidebar::-webkit-scrollbar-thumb {
-        background: #d1d5db;
-        border-radius: 4px;
+    .hamburger-btn span {
+        display: block;
+        width: 22px;
+        height: 2px;
+        background: #111827;
+        border-radius: 2px;
     }
 
-    .sidebar::-webkit-scrollbar-thumb:hover {
-        background: #9ca3af;
+    /* ====== CLOSE dentro do sidebar ====== */
+    .sidebar-close {
+        display: none;
+        position: absolute;
+        right: 12px;
+        top: 12px;
+        font-size: 28px;
+        width: 40px;
+        height: 40px;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        border-radius: 8px;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
     }
 
-    /* Responsivo */
+    /* ====== BACKDROP ====== */
+    .sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.35);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+        z-index: 2500;
+    }
+
+    .sidebar-backdrop.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* ====== RESPONSIVO ====== */
     @media (max-width: 768px) {
+        .hamburger-btn {
+            display: flex;
+        }
+
         .sidebar {
-            width: 100%;
-            min-height: auto;
-            top: 0;
+            width: 85%;
+            max-width: 320px;
             transform: translateX(-100%);
         }
 
@@ -179,21 +230,33 @@
             transform: translateX(0);
         }
 
-        .nav-link {
-            padding: 12px 16px;
-            font-size: 14px;
-        }
-
-        .user-section {
-            padding: 18px 16px;
-        }
-
-        .empresa-name {
-            font-size: 15px;
-        }
-
-        .user-info {
-            font-size: 13px;
+        .sidebar-close {
+            display: flex;
         }
     }
 </style>
+
+<script>
+    (function () {
+        const sidebar = document.getElementById('app-sidebar');
+        const hamburger = document.getElementById('hamburger');
+        const closeBtn = document.getElementById('sidebar-close');
+        const backdrop = document.getElementById('sidebar-backdrop');
+
+        function openSidebar() {
+            sidebar.classList.add('mobile-open');
+            backdrop.classList.add('show');
+            hamburger.style.display = 'none'; // esconde o hamburguer
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('mobile-open');
+            backdrop.classList.remove('show');
+            hamburger.style.display = 'flex'; // volta o hamburguer
+        }
+
+        if (hamburger) hamburger.addEventListener('click', openSidebar);
+        if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+        if (backdrop) backdrop.addEventListener('click', closeSidebar);
+    })();
+</script>
