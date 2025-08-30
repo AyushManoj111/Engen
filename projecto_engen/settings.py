@@ -33,7 +33,9 @@ ALLOWED_HOSTS = [
     "127.0.0.1" 
 ]
 
-LOGIN_URL = '/'
+LOGIN_URL = '/gerente/login/'
+
+LOGIN_REDIRECT_URL = '/afterlogin'
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),  # pasta global de arquivos estáticos
@@ -82,7 +84,6 @@ TEMPLATES = [
     },
 ]
 
-LOGIN_REDIRECT_URL = '/afterlogin'
 
 WSGI_APPLICATION = "projecto_engen.wsgi.application"
 

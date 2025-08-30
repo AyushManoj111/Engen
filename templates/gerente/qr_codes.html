@@ -4,16 +4,183 @@
 
 {% block content %}
 
-<div class="print-controls no-print">
-    <button onclick="window.print()" class="btn-print">🖨️ Imprimir QR Codes</button>
-    <a href="{% url 'ver_senhas' requisicao.id %}" class="btn-print btn-back">← Voltar</a>
-</div>
+<style>
+/* --- HEADER --- */
+.print-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #ccc;
+}
+.print-header-left {
+    text-align: left;
+}
+.print-header-left h1 {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: #333;
+}
+.print-header-left .header-info {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    color: #555;
+}
+.print-header-left .header-info span {
+    display: inline-block;
+    padding: 2px 6px;
+    background: #f3f4f6;
+    border-radius: 4px;
+}
+
+/* --- BOTÕES HEADER --- */
+.print-header-right {
+    display: flex;
+    gap: 6px;
+}
+.btn-print {
+    background: #2563eb;
+    color: white;
+    padding: 6px 14px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+.btn-print:hover { background: #1d4ed8; }
+.btn-back { background: #6b7280; }
+.btn-back:hover { background: #565e64; }
+
+/* --- PRINT --- */
+@media print {
+    body * { visibility: hidden; }
+    .print-area, .print-area * { visibility: visible; }
+    .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+    .no-print { display: none !important; }
+    .qr-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+        page-break-inside: avoid;
+    }
+    .qr-card { break-inside: avoid; page-break-inside: avoid; }
+    .page-break { page-break-after: always; }
+}
+
+/* --- GRID QR --- */
+.qr-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+    margin-top: 15px;
+}
+.qr-card {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: center;
+    background: white;
+    border-radius: 4px;
+}
+.qr-card h3 {
+    margin: 0 0 8px 0;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #333;
+}
+.qr-code img {
+    max-width: 160px;
+    height: auto;
+    margin: 6px 0;
+    padding: 6px;
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}
+.senha-codigo {
+    font-family: monospace;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #2563eb;
+    background: #f3f4f6;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin: 6px 0;
+    letter-spacing: 0.5px;
+}
+
+/* --- INFO --- */
+.cliente-info {
+    background: #f9fafb;
+    padding: 8px;
+    border-radius: 4px;
+    margin-top: 10px;
+    font-size: 0.75rem;
+    color: #555;
+}
+.info-requisicao {
+    background: #f9fafb;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    font-size: 0.8rem;
+}
+.info-requisicao h4 {
+    margin: 0 0 8px 0;
+    color: #333;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 6px;
+}
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 0.75rem;
+}
+.info-item:last-child { border-bottom: none; }
+.info-label { color: #666; }
+.info-value { color: #333; }
+
+/* --- EMPTY --- */
+.empty-state {
+    text-align: center;
+    padding: 25px;
+    color: #666;
+    font-size: 0.8rem;
+}
+.empty-state h3 {
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+.empty-state p { font-size: 0.75rem; }
+</style>
 
 <div class="print-area">
-    <div class="print-header">
-        <h1>QR Codes das Senhas</h1>
-        <p><strong>Requisição:</strong> #{{ requisicao.id }}</p>
-        <p><strong>Data de Geração:</strong> {{ data_geracao }}</p>
+    <div class="print-header no-print">
+        <div class="print-header-left">
+            <h1>QR Codes das Senhas</h1>
+            <div class="header-info">
+                <span>Requisição #{{ requisicao.id }}</span>
+                <span>Data: {{ data_geracao }}</span>
+                <span>Cliente: {{ requisicao.cliente.nome }}</span>
+            </div>
+        </div>
+        <div class="print-header-right">
+            <button onclick="window.print()" class="btn-print">🖨️ Imprimir</button>
+            <a href="{% url 'ver_senhas' requisicao.id %}" class="btn-print btn-back">← Voltar</a>
+        </div>
     </div>
 
     <div class="info-requisicao">
@@ -73,7 +240,6 @@
             </div>
         </div>
         
-        {% comment %} Quebra de página a cada 6 itens para impressão {% endcomment %}
         {% if forloop.counter|divisibleby:6 %}
             <div class="page-break"></div>
         {% endif %}
@@ -81,12 +247,13 @@
     </div>
     {% else %}
     <div class="empty-state">
+        <h3>Nenhuma senha disponível</h3>
         <p>Não há senhas não usadas para gerar QR Codes.</p>
         <a href="{% url 'ver_senhas' requisicao.id %}" class="btn-print btn-back">Ver Todas as Senhas</a>
     </div>
     {% endif %}
 
-    <div style="margin-top: 40px; text-align: center; font-size: 12px; color: #666;">
+    <div style="margin-top: 25px; text-align: center; font-size: 0.7rem; color: #666;">
         <p>QR Codes gerados em {{ data_geracao }} | Sistema ENGEN</p>
         <p>Total de códigos: {{ senhas_nao_usadas.count }}</p>
         <p>Requisição #{{ requisicao.id }} - {{ requisicao.cliente.nome }}</p>
@@ -94,7 +261,6 @@
 </div>
 
 <script>
-    // Auto-foco para impressão se solicitado
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('print') === 'true') {
         window.onload = function() {

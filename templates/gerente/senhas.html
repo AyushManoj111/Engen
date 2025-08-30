@@ -4,6 +4,224 @@
 
 {% block content %}
 
+<style>
+    /* ====== Estilo minimalista e profissional ====== */
+    .page-container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 16px;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 13px;
+        color: #374151;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .page-title {
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin: 0;
+        color: #111827;
+    }
+
+    .page-subtitle {
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin-top: 2px;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 6px;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        font-size: 0.75rem;
+        border-radius: 4px;
+        border: 1px solid;
+        cursor: pointer;
+        text-decoration: none;
+        font-weight: 400;
+    }
+
+    .btn-primary {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        background: #1d4ed8;
+    }
+
+    .btn-secondary {
+        background: #fff;
+        border-color: #d1d5db;
+        color: #374151;
+    }
+
+    .btn-secondary:hover {
+        background: #f9fafb;
+    }
+
+    /* Card */
+    .content-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 4px;
+    }
+
+    .card-header {
+        padding: 12px;
+        border-bottom: 1px solid #e5e7eb;
+        background: #fafafa;
+    }
+
+    .card-title {
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin: 0;
+        color: #111827;
+    }
+
+    .stats-summary {
+        display: flex;
+        gap: 12px;
+        margin-top: 4px;
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+
+    .stat-number {
+        font-weight: 400;
+        color: #374151;
+        margin-right: 2px;
+    }
+
+    /* Tabela */
+    .table-container {
+        overflow-x: auto;
+    }
+
+    .modern-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.75rem;
+    }
+
+    .modern-table th {
+        background: #fafafa;
+        padding: 8px 10px;
+        text-align: left;
+        font-weight: 500;
+        color: #555;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 0.7rem;
+    }
+
+    .modern-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #f3f4f6;
+        font-weight: 400;
+    }
+
+    .modern-table tbody tr:hover {
+        background: #fafafa;
+    }
+
+    /* Código */
+    .senha-code {
+        font-family: monospace;
+        background: #f3f4f6;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.7rem;
+        font-weight: 400;
+    }
+
+    /* Status */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 0.7rem;
+        font-weight: 400;
+        text-transform: none;
+    }
+
+    .status-disponivel {
+        background: #ecfdf5;
+        color: #047857;
+    }
+
+    .status-usado {
+        background: #fef2f2;
+        color: #b91c1c;
+    }
+
+    .status-icon {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    /* Estado vazio */
+    .empty-state {
+        text-align: center;
+        padding: 32px 16px;
+        color: #6b7280;
+    }
+
+    .empty-state-icon {
+        font-size: 2rem;
+        margin-bottom: 10px;
+        opacity: 0.5;
+    }
+
+    .empty-state h3 {
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-bottom: 4px;
+    }
+
+    .empty-state p {
+        font-size: 0.75rem;
+    }
+
+    /* Responsivo */
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .header-actions {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
 
 <div class="page-container">
     <div class="page-header">
@@ -12,14 +230,8 @@
             <p class="page-subtitle">Requisição #{{ requisicao.id }} • {{ requisicao.cliente.nome }}</p>
         </div>
         <div class="header-actions">
-            <a href="{% url 'imprimir_qr_codes' requisicao.id %}" class="btn btn-primary">
-                <span class="btn-icon">📱</span>
-                Gerar QR Codes
-            </a>
-            <a href="{% url 'requisicoes' %}" class="btn btn-secondary">
-                <span class="btn-icon">←</span>
-                Voltar
-            </a>
+            <a href="{% url 'imprimir_qr_codes' requisicao.id %}" class="btn btn-primary">📱 Gerar QR Codes</a>
+            <a href="{% url 'requisicoes' %}" class="btn btn-secondary">← Voltar</a>
         </div>
     </div>
 
@@ -27,18 +239,10 @@
         <div class="card-header">
             <h2 class="card-title">Lista de Senhas</h2>
             <div class="stats-summary">
-                <div class="stat-item">
-                    <span class="stat-number">{{ senhas.count }}</span>
-                    <span>Total</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number">{{ senhas|length|add:0 }}</span>
-                    <span>Disponíveis</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number">{{ requisicao.data_criacao|date:"d/m/Y" }}</span>
-                    <span>Criada em</span>
-                </div>
+                <div class="stat-item"><span class="stat-number">{{ senhas.count }}</span> Total</div>
+                <div class="stat-item"><span class="stat-number">{{ senhas|length|add:0 }}</span> Disponíveis</div>
+                <div class="stat-item"><span class="stat-number">{{ requisicao.data_criacao|date:"d/m/Y" }}</span>
+                    Criada em</div>
             </div>
         </div>
 
@@ -56,21 +260,14 @@
                 <tbody>
                     {% for senha in senhas %}
                     <tr>
-                        <td>
-                            <span class="senha-code">{{ senha.codigo }}</span>
-                        </td>
+                        <td><span class="senha-code">{{ senha.codigo }}</span></td>
                         <td>{{ senha.cliente.nome }}</td>
                         <td>
                             {% if senha.usada %}
-                            <span class="status-badge status-usado">
-                                <span class="status-icon"></span>
-                                Usada
-                            </span>
+                            <span class="status-badge status-usado"><span class="status-icon"></span> Usada</span>
                             {% else %}
-                            <span class="status-badge status-disponivel">
-                                <span class="status-icon"></span>
-                                Disponível
-                            </span>
+                            <span class="status-badge status-disponivel"><span class="status-icon"></span>
+                                Disponível</span>
                             {% endif %}
                         </td>
                         <td>{{ senha.data_criacao|date:"d/m/Y H:i" }}</td>
@@ -88,4 +285,5 @@
         </div>
     </div>
 </div>
+
 {% endblock %}

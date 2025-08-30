@@ -5,17 +5,136 @@
 
 {% block content %}
 
+<style>
+/* --- HEADER --- */
+.print-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #ccc;
+}
+.print-header-left {
+    text-align: left;
+}
+.print-header-left h1 {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: #333;
+}
+.print-header-left .header-info {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    color: #555;
+}
+.print-header-left .header-info span {
+    display: inline-block;
+    padding: 2px 6px;
+    background: #f3f4f6;
+    border-radius: 4px;
+}
 
-<div class="print-controls no-print">
-    <button onclick="window.print()" class="btn-print">🖨️ Imprimir QR Codes</button>
-    <a href="{% url 'requisicoes_saldo' %}" class="btn-print btn-back">← Voltar</a>
-</div>
+/* --- BOTÕES HEADER --- */
+.print-header-right {
+    display: flex;
+    gap: 6px;
+}
+.btn-print {
+    background: #2563eb;
+    color: white;
+    padding: 6px 14px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+.btn-print:hover { background: #1d4ed8; }
+.btn-back { background: #6b7280; }
+.btn-back:hover { background: #565e64; }
+
+/* --- PRINT --- */
+@media print {
+    body * { visibility: hidden; }
+    .print-area, .print-area * { visibility: visible; }
+    .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+    .no-print { display: none !important; }
+}
+
+/* --- INFO --- */
+.info-requisicao {
+    background: #f9fafb;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    font-size: 0.8rem;
+}
+.info-requisicao h4 {
+    margin: 0 0 8px 0;
+    color: #333;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 6px;
+}
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 0.75rem;
+}
+.info-item:last-child { border-bottom: none; }
+.info-label { color: #666; }
+.info-value { color: #333; }
+
+/* --- QR --- */
+.qr-item h3 {
+    margin: 0 0 10px 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #333;
+}
+.codigo {
+    font-family: monospace;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #2563eb;
+    background: #f3f4f6;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin: 6px 0;
+    letter-spacing: 0.5px;
+}
+.valor {
+    font-size: 0.8rem;
+    color: #444;
+    margin: 2px 0;
+}
+</style>
 
 <div class="print-area">
-    <div class="print-header">
-        <h1>QR Codes - Requisição de Saldo</h1>
-        <p><strong>Código:</strong> {{ requisicao.codigo }}</p>
-        <p><strong>Data de Geração:</strong> {{ data_geracao }}</p>
+    <div class="print-header no-print">
+        <div class="print-header-left">
+            <h1>QR Code da Requisição de Saldo</h1>
+            <div class="header-info">
+                <span>Código: {{ requisicao.codigo }}</span>
+                <span>Data: {{ data_geracao }}</span>
+                <span>Cliente: {{ requisicao.cliente.nome }}</span>
+            </div>
+        </div>
+        <div class="print-header-right">
+            <button onclick="window.print()" class="btn-print">🖨️ Imprimir</button>
+            <a href="{% url 'requisicoes_saldo' %}" class="btn-print btn-back">← Voltar</a>
+        </div>
     </div>
 
     <div class="info-requisicao">
@@ -55,9 +174,7 @@
     <div style="text-align: center; margin: 40px 0;">
         <div class="qr-item" style="display: inline-block; max-width: 400px;">
             <h3>Código da Requisição</h3>
-            
-            <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code {{ requisicao.codigo }}" style="max-width: 300px; height: auto; margin: 20px 0;">
-            
+            <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code {{ requisicao.codigo }}" style="max-width: 300px; height: auto; margin: 20px 0; border: 1px solid #eee; padding: 6px; border-radius: 4px; background: #fff;">
             <div class="codigo">{{ requisicao.codigo }}</div>
             <div class="valor">Valor Total: {{ requisicao.valor_total }} MT</div>
             <div class="valor">Saldo Restante: {{ requisicao.saldo_restante }} MT</div>
@@ -69,14 +186,13 @@
     </div>
     {% endif %}
 
-    <div style="margin-top: 40px; text-align: center; font-size: 12px; color: #666;">
+    <div style="margin-top: 25px; text-align: center; font-size: 0.7rem; color: #666;">
         <p>QR Code gerado em {{ data_geracao }} | Sistema ENGEN</p>
         <p>Código: {{ requisicao.codigo }}</p>
     </div>
 </div>
 
 <script>
-    // Auto-foco para impressão se solicitado
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('print') === 'true') {
         window.onload = function() {

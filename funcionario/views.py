@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.db.models import Q
 from django.utils import timezone
 from gerente.models import Senha, RequisicaoSaldo, Movimento, Funcionario
-from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.decorators import user_passes_test, login_required
 from decimal import Decimal
 import cv2
 import json
@@ -69,7 +69,8 @@ def logout_view(request):
     return redirect('')
 
 
-@user_passes_test(is_funcionario, login_url='/login/')
+@login_required(login_url='/funcionario/login')
+@user_passes_test(is_funcionario, login_url='/login')
 def scan_senha_view(request):
     """
     View para scan de senha e débito de saldo - APENAS da empresa do funcionário
@@ -190,7 +191,8 @@ def scan_senha_view(request):
     return render(request, 'funcionario/dashboard_funcionario.html', context)
 
 
-@user_passes_test(is_funcionario, login_url='/login/')
+@login_required(login_url='/funcionario/login')
+@user_passes_test(is_funcionario, login_url='/login')
 def funcionario_dashboard(request):
     """
     Dashboard específico para funcionários com estatísticas da empresa
@@ -234,6 +236,8 @@ def funcionario_dashboard(request):
 # Variável global para controlar o estado da câmera
 camera_active = {}
 
+@login_required(login_url='/funcionario/login')
+@user_passes_test(is_funcionario, login_url='/login')
 def generate_camera_frames(camera_id=0):
     """
     Gerador de frames da câmera para streaming
@@ -278,7 +282,8 @@ def generate_camera_frames(camera_id=0):
     finally:
         cap.release()
 
-@user_passes_test(is_funcionario, login_url='/login/')
+@login_required(login_url='/funcionario/login')
+@user_passes_test(is_funcionario, login_url='/login')
 def camera_stream(request):
     """
     View para streaming da câmera
@@ -298,7 +303,8 @@ def camera_stream(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-@user_passes_test(is_funcionario, login_url='/login/')
+@login_required(login_url='/funcionario/login')
+@user_passes_test(is_funcionario, login_url='/login')
 def stop_camera(request):
     """
     View para parar a câmera
@@ -309,7 +315,8 @@ def stop_camera(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-@user_passes_test(is_funcionario, login_url='/login/')
+@login_required(login_url='/funcionario/login')
+@user_passes_test(is_funcionario, login_url='/login')
 def scan_qr_code(request):
     """
     View para processar imagem e detectar QR codes
@@ -404,7 +411,8 @@ def scan_qr_code(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-@user_passes_test(is_funcionario, login_url='/login/')
+@login_required(login_url='/funcionario/login')
+@user_passes_test(is_funcionario, login_url='/login')
 def process_scanned_code(request):
     """
     View para processar código escaneado (marcar senha como usada ou debitar saldo)

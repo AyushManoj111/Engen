@@ -212,9 +212,17 @@
         }
 
         @keyframes scan-animation {
-            0% { border-color: rgba(34, 197, 94, 0.3); }
-            50% { border-color: rgba(34, 197, 94, 0.8); }
-            100% { border-color: rgba(34, 197, 94, 0.3); }
+            0% {
+                border-color: rgba(34, 197, 94, 0.3);
+            }
+
+            50% {
+                border-color: rgba(34, 197, 94, 0.8);
+            }
+
+            100% {
+                border-color: rgba(34, 197, 94, 0.3);
+            }
         }
 
         .camera-controls {
@@ -486,8 +494,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         /* Responsive */
@@ -495,11 +508,11 @@
             .container {
                 padding: 0.75rem;
             }
-            
+
             .scan-form {
                 padding: 0.75rem;
             }
-            
+
             .header {
                 padding: 0.75rem;
             }
@@ -536,7 +549,7 @@
             <div class="section-header">
                 <h2>Scanner</h2>
             </div>
-            
+
             <!-- Tabs para métodos de scan -->
             <div class="scan-methods">
                 <button class="method-tab active" data-method="camera">QR Camera</button>
@@ -568,7 +581,7 @@
                         </div>
                         <div class="camera-overlay"></div>
                     </div>
-                    
+
                     <div class="camera-controls">
                         <button id="start-camera" class="camera-btn start-camera">Iniciar Camera</button>
                         <button id="stop-camera" class="camera-btn stop-camera" disabled>Parar Camera</button>
@@ -581,7 +594,7 @@
                             <input id="qr-valor" name="valor" type="number" step="0.01" min="0"
                                 placeholder="0.00 (deixe vazio para consultar)" />
                         </div>
-                        
+
                         <div class="fuel-group">
                             <label>Tipo de Combustível (Obrigatório)</label>
                             <div class="fuel-options">
@@ -601,7 +614,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <button type="submit" class="scan-button">
                             Processar Código
                         </button>
@@ -613,19 +626,19 @@
             <div id="manual-method" class="method-content">
                 <form method="post">
                     {% csrf_token %}
-                    
+
                     <div class="form-group">
                         <label for="string">Código</label>
-                        <input id="string" name="string" type="text" placeholder="Digite ou escaneie o código"
-                            required autocomplete="off" />
+                        <input id="string" name="string" type="text" placeholder="Digite ou escaneie o código" required
+                            autocomplete="off" />
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="valor">Valor (MT)</label>
                         <input id="valor" name="valor" type="number" step="0.01" min="0"
                             placeholder="0.00 (para consultar saldo)" />
                     </div>
-                    
+
                     <div class="fuel-group">
                         <label>Tipo de Combustível (Obrigatório)</label>
                         <div class="fuel-options">
@@ -645,7 +658,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <button type="submit" class="scan-button">
                         Processar
                     </button>
@@ -676,7 +689,7 @@
             const detectedInfo = document.getElementById('detected-info');
             const qrProcessForm = document.getElementById('qr-process-form');
             const processingModal = document.getElementById('processing-modal');
-            
+
             // Variáveis de estado
             let isScanning = false;
             let detectedCodeData = null;
@@ -685,21 +698,21 @@
 
             // Gerenciar tabs
             methodTabs.forEach(tab => {
-                tab.addEventListener('click', function() {
+                tab.addEventListener('click', function () {
                     const method = this.dataset.method;
-                    
+
                     // Parar câmera se estiver ativa
                     if (isScanning) {
                         stopCamera();
                     }
-                    
+
                     // Atualizar tabs
                     methodTabs.forEach(t => t.classList.remove('active'));
                     methodContents.forEach(c => c.classList.remove('active'));
-                    
+
                     this.classList.add('active');
                     document.getElementById(method + '-method').classList.add('active');
-                    
+
                     // Focar no campo apropriado
                     if (method === 'manual') {
                         setTimeout(() => {
@@ -714,7 +727,7 @@
             qrFuelOptions.forEach(option => {
                 option.addEventListener('click', function (e) {
                     if (e.target.type === 'radio') return;
-                    
+
                     const fuelType = this.dataset.fuel;
                     const radio = document.getElementById('qr-' + fuelType);
 
@@ -731,7 +744,7 @@
             manualFuelOptions.forEach(option => {
                 option.addEventListener('click', function (e) {
                     if (e.target.type === 'radio') return;
-                    
+
                     const fuelType = this.dataset.fuel;
                     const radio = document.getElementById(fuelType);
 
@@ -745,10 +758,10 @@
 
             // Gerenciar mudança direta no radio button
             document.querySelectorAll('input[type="radio"]').forEach(radio => {
-                radio.addEventListener('change', function() {
+                radio.addEventListener('change', function () {
                     const isQr = this.name === 'qr_tipo_combustivel';
                     const options = isQr ? qrFuelOptions : manualFuelOptions;
-                    
+
                     options.forEach(opt => opt.classList.remove('selected'));
                     const selectedOption = document.querySelector(
                         `.fuel-option[data-fuel="${this.value}"]`
@@ -763,7 +776,7 @@
             async function startCamera() {
                 try {
                     showStatus('Solicitando acesso à câmera...', 'scanning');
-                    
+
                     // Solicitar acesso à câmera
                     const constraints = {
                         video: {
@@ -772,35 +785,35 @@
                             height: { ideal: 480 }
                         }
                     };
-                    
+
                     mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-                    
+
                     // Configurar vídeo
                     cameraVideo.srcObject = mediaStream;
                     cameraVideo.style.display = 'block';
                     cameraPlaceholder.style.display = 'none';
-                    
+
                     // Aguardar vídeo carregar
                     await new Promise((resolve) => {
                         cameraVideo.onloadedmetadata = resolve;
                     });
-                    
+
                     // Configurar canvas
                     cameraCanvas.width = cameraVideo.videoWidth || 640;
                     cameraCanvas.height = cameraVideo.videoHeight || 480;
-                    
+
                     isScanning = true;
                     startCameraBtn.disabled = true;
                     stopCameraBtn.disabled = false;
-                    
+
                     showStatus('Procurando QR codes...', 'scanning');
-                    
+
                     // Iniciar captura de frames para análise
                     startQRDetection();
-                    
+
                 } catch (error) {
                     console.error('Erro ao iniciar câmera:', error);
-                    
+
                     let errorMessage = 'Erro ao acessar câmera';
                     if (error.name === 'NotAllowedError') {
                         errorMessage = 'Acesso à câmera negado. Permita o acesso para usar o scanner.';
@@ -809,7 +822,7 @@
                     } else if (error.name === 'NotSupportedError') {
                         errorMessage = 'Câmera não suportada pelo navegador.';
                     }
-                    
+
                     showStatus(errorMessage, 'error');
                     resetCameraState();
                 }
@@ -823,16 +836,16 @@
                         clearInterval(scanInterval);
                         scanInterval = null;
                     }
-                    
+
                     // Parar stream da câmera
                     if (mediaStream) {
                         mediaStream.getTracks().forEach(track => track.stop());
                         mediaStream = null;
                     }
-                    
+
                     resetCameraState();
                     showStatus('Câmera parada', 'error');
-                    
+
                 } catch (error) {
                     console.error('Erro ao parar câmera:', error);
                     resetCameraState();
@@ -848,12 +861,12 @@
                 stopCameraBtn.disabled = true;
                 hideDetectedInfo();
                 qrProcessForm.style.display = 'none';
-                
+
                 if (scanInterval) {
                     clearInterval(scanInterval);
                     scanInterval = null;
                 }
-                
+
                 if (mediaStream) {
                     mediaStream.getTracks().forEach(track => track.stop());
                     mediaStream = null;
@@ -864,19 +877,19 @@
             function startQRDetection() {
                 scanInterval = setInterval(async () => {
                     if (!isScanning || !cameraVideo.videoWidth) return;
-                    
+
                     try {
                         // Capturar frame atual no canvas
                         const ctx = cameraCanvas.getContext('2d');
                         cameraCanvas.width = cameraVideo.videoWidth;
                         cameraCanvas.height = cameraVideo.videoHeight;
-                        
+
                         // Desenhar frame do vídeo no canvas
                         ctx.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
-                        
+
                         // Converter para base64
                         const imageData = cameraCanvas.toDataURL('image/jpeg', 0.8);
-                        
+
                         // Enviar para análise no backend
                         const response = await fetch('{% url "scan_qr_code" %}', {
                             method: 'POST',
@@ -886,20 +899,20 @@
                             },
                             body: JSON.stringify({ image: imageData })
                         });
-                        
+
                         const result = await response.json();
-                        
+
                         if (result.success) {
                             // QR Code detectado
                             detectedCodeData = result;
                             showDetectedCode(result);
                             showStatus('QR Code detectado!', 'detected');
-                            
+
                             // Parar scanning temporariamente
                             clearInterval(scanInterval);
                             scanInterval = null;
                         }
-                        
+
                     } catch (error) {
                         console.error('Erro na detecção QR:', error);
                     }
@@ -909,20 +922,21 @@
             // Função para mostrar código detectado
             function showDetectedCode(data) {
                 document.getElementById('detected-code').textContent = data.codigo;
-                document.getElementById('detected-type').textContent = 
+                document.getElementById('detected-type').textContent =
                     data.type === 'senha' ? 'Tipo: Senha' : 'Tipo: Saldo';
-                
+
                 let details = '';
                 if (data.type === 'senha') {
-                    details = `Cliente: ${data.data.cliente} | Status: ${data.data.usada ? 'Usada' : 'Disponível'}`;
+                    details = `Status: ${data.data.usada ? 'Usada' : 'Disponível'}`;
                 } else {
-                    details = `Cliente: ${data.data.cliente} | Saldo: ${data.data.saldo_restante} MT`;
+                    details = `Código válido para débito de saldo`;
                 }
                 document.getElementById('detected-details').textContent = details;
-                
+
+
                 detectedInfo.classList.add('show');
                 qrProcessForm.style.display = 'block';
-                
+
                 // Se for senha, esconder campo valor
                 const valorInput = document.getElementById('qr-valor');
                 if (data.type === 'senha') {
@@ -946,36 +960,36 @@
             }
 
             // Processar formulário QR
-            qrProcessForm.addEventListener('submit', async function(e) {
+            qrProcessForm.addEventListener('submit', async function (e) {
                 e.preventDefault();
-                
+
                 if (!detectedCodeData) {
                     alert('Nenhum código detectado');
                     return;
                 }
-                
+
                 const valor = document.getElementById('qr-valor').value;
                 const tipoCombustivel = document.querySelector('input[name="qr_tipo_combustivel"]:checked');
-                
+
                 // Validações
                 if (!tipoCombustivel) {
                     alert('Por favor, selecione o tipo de combustível.');
                     return;
                 }
-                
+
                 if (detectedCodeData.type === 'saldo' && !valor) {
                     alert('Para débito de saldo é necessário informar o valor.');
                     return;
                 }
-                
+
                 if (valor && parseFloat(valor) <= 0) {
                     alert('O valor deve ser maior que zero.');
                     return;
                 }
-                
+
                 try {
                     showProcessingModal();
-                    
+
                     const response = await fetch('{% url "process_scanned_code" %}', {
                         method: 'POST',
                         headers: {
@@ -989,18 +1003,18 @@
                             tipo_combustivel: tipoCombustivel.value
                         })
                     });
-                    
+
                     const result = await response.json();
-                    
+
                     hideProcessingModal();
-                    
+
                     if (result.success) {
                         showMessage(result.message, 'success');
                         resetAfterSuccess();
                     } else {
                         showMessage(result.error, 'error');
                     }
-                    
+
                 } catch (error) {
                     hideProcessingModal();
                     console.error('Erro ao processar:', error);
@@ -1014,11 +1028,11 @@
                 document.getElementById('qr-valor').value = '';
                 document.querySelectorAll('input[name="qr_tipo_combustivel"]').forEach(r => r.checked = false);
                 qrFuelOptions.forEach(opt => opt.classList.remove('selected'));
-                
+
                 // Esconder informações e formulário
                 hideDetectedInfo();
                 qrProcessForm.style.display = 'none';
-                
+
                 // Reiniciar scanning se câmera estiver ativa
                 if (isScanning) {
                     setTimeout(() => {
@@ -1051,14 +1065,14 @@
                     newMessages.className = 'messages';
                     container.insertBefore(newMessages, container.firstChild);
                 }
-                
+
                 const messageElement = document.createElement('li');
                 messageElement.className = type;
                 messageElement.textContent = message;
-                
+
                 const messages = document.querySelector('.messages');
                 messages.appendChild(messageElement);
-                
+
                 // Remover mensagem após 5 segundos
                 setTimeout(() => {
                     messageElement.remove();
@@ -1130,7 +1144,7 @@
                     radio.checked = false;
                 });
                 manualFuelOptions.forEach(option => option.classList.remove('selected'));
-                
+
                 setTimeout(() => {
                     stringInput?.focus();
                 }, 100);
