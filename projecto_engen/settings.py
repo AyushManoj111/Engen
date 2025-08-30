@@ -29,7 +29,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     "engen-qd5j.onrender.com",
-    "engendocker.onrender.com"
+    "engendocker.onrender.com",
     "localhost",
     "127.0.0.1"
 ]
