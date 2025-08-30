@@ -187,7 +187,96 @@
 </div>
 
 <script>
-    /* Mantém o mesmo JS do primeiro arquivo */
+    function toggleBancoField() {
+        const formaPagamento = document.getElementById('forma_pagamento').value;
+        const bancoGroup = document.getElementById('banco_group');
+        const bancoField = document.getElementById('banco');
+
+        if (formaPagamento === 'transferencia') {
+            bancoGroup.style.display = 'block';
+            bancoField.required = true;
+        } else {
+            bancoGroup.style.display = 'none';
+            bancoField.required = false;
+            bancoField.value = '';
+        }
+    }
+
+    // Get configuration data from JSON script tag
+    function getConfigData() {
+        const configElement = document.getElementById('requisicao-data');
+        if (configElement) {
+            try {
+                return JSON.parse(configElement.textContent);
+            } catch (e) {
+                console.error('Error parsing config data:', e);
+                return {};
+            }
+        }
+        return {};
+    }
+
+    function fecharRecibo() {
+        const modal = document.getElementById('reciboModal');
+        if (modal) {
+            modal.style.display = 'none';
+            // Redirecionar para lista de requisições após fechar
+            const config = getConfigData();
+            if (config.requisicoesUrl) {
+                window.location.href = config.requisicoesUrl;
+            } else {
+                // Fallback URL
+                window.location.href = '/requisicoes/';
+            }
+        }
+    }
+
+    function imprimirRecibo() {
+        const config = getConfigData();
+
+        // Verificar se temos requisição para gerar PDF
+        if (config.hasRequisicao && config.reciboUrl) {
+            // Abrir PDF em nova aba
+            window.open(config.reciboUrl, '_blank');
+        } else {
+            // Fallback: imprimir a página atual
+            window.print();
+        }
+    }
+
+    function baixarReciboPDF() {
+        const config = getConfigData();
+
+        if (config.hasRequisicao && config.reciboUrl) {
+            window.location.href = config.reciboUrl;
+        } else {
+            alert('Erro: Requisição não encontrada');
+        }
+    }
+
+    // Fechar modal com ESC
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            fecharRecibo();
+        }
+    });
+
+    // Fechar modal clicando fora
+    document.addEventListener('click', function (event) {
+        const modal = document.getElementById('reciboModal');
+        if (modal && event.target === modal) {
+            fecharRecibo();
+        }
+    });
+
+    // Initialize modal if present
+    document.addEventListener('DOMContentLoaded', function () {
+        const modal = document.getElementById('reciboModal');
+        if (modal) {
+            // Modal is already visible due to server-side rendering
+            console.log('Recibo modal initialized');
+        }
+    });
 </script>
 
 {% endblock %}
